@@ -8,6 +8,7 @@ import 'package:zhouji/repositories/focus_repository.dart';
 import 'package:zhouji/services/notification_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late AppDatabase database;
   late FocusRepository repository;
 

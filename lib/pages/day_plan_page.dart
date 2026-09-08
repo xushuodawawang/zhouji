@@ -86,7 +86,7 @@ class _DayPlanPageState extends ConsumerState<DayPlanPage> {
               const SizedBox(height: 18),
               _SectionTitle(
                 icon: Icons.task_alt_outlined,
-                title: '完成记录',
+                title: '活动记录',
                 count: records.valueOrNull?.length ?? 0,
               ),
               const SizedBox(height: 6),
@@ -97,7 +97,7 @@ class _DayPlanPageState extends ConsumerState<DayPlanPage> {
                     records.valueOrNull?.isEmpty ?? true
                         ? '今天还没有实际完成记录'
                         : '已记录 ${records.valueOrNull!.length} 项，'
-                            '共 ${AppDateUtils.formatDuration(records.valueOrNull!.fold(0, (sum, item) => sum + item.durationMinutes))}',
+                            '已完成 ${AppDateUtils.formatDuration(records.valueOrNull!.where((item) => item.isCompleted).fold(0, (sum, item) => sum + item.durationMinutes))}',
                   ),
                   subtitle: const Text('在“记录”页新增、编辑或删除'),
                   trailing: const Icon(Icons.chevron_right),

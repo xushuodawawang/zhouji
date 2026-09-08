@@ -19,6 +19,10 @@ class PlanTaskRepository {
 
   final AppDatabase _database;
 
+  Stream<List<PlanTask>> watchBetween(DateTime start, DateTime end) => _database
+      .watchTasksBetween(start, end)
+      .map((rows) => rows.map(_fromRow).toList());
+
   Stream<List<PlanTask>> watchWeek(DateTime weekStart) {
     final start = AppDateUtils.startOfWeek(weekStart);
     return _database
@@ -66,6 +70,7 @@ class PlanTaskRepository {
             draft.plannedDurationMinutes ??
                 (draft.endMinutes - draft.startMinutes),
           ),
+          focusMinutes: Value(draft.focusMinutes),
           createdAt: draft.id == null ? Value(now) : const Value.absent(),
           updatedAt: Value(now),
         ),
@@ -113,11 +118,16 @@ class PlanTaskRepository {
       throw const RepositoryException('任务名称不能为空');
     }
     if (draft.isAllDay) return;
-    if (draft.startMinutes < AppDateUtils.dayStartMinutes ||
-        draft.endMinutes > AppDateUtils.dayEndMinutes ||
+    if (draft.startMinutes < 0 ||
+        draft.startMinutes >= AppDateUtils.maximumTimelineMinutes ||
+        draft.endMinutes > AppDateUtils.maximumTimelineMinutes ||
         draft.endMinutes - draft.startMinutes <
             AppDateUtils.manualMinimumMinutes) {
-      throw const RepositoryException('任务时间必须在 07:00 至 24:00，且不少于 5 分钟');
+      throw const RepositoryException('任务时间超出可用范围，或时长少于 5 分钟');
+    }
+    if (draft.focusMinutes != null &&
+        (draft.focusMinutes! < 1 || draft.focusMinutes! > 240)) {
+      throw const RepositoryException('单次专注时长须在 1 至 240 分钟之间');
     }
   }
 
@@ -136,6 +146,7 @@ class PlanTaskRepository {
     sortOrder: row.sortOrder,
     completedAt: row.completedAt,
     plannedDurationMinutes: row.plannedDurationMinutes,
+    focusMinutes: row.focusMinutes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   );

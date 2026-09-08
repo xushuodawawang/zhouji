@@ -20,4 +20,12 @@ abstract final class AppColors {
     Color(0xFFC3AB78),
     Color(0xFF8FAF8A),
   ];
+
+  static int automaticTaskColor(String title) {
+    var hash = 0;
+    for (final unit in title.trim().codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    return taskPalette[hash % taskPalette.length].toARGB32();
+  }
 }

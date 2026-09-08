@@ -14,6 +14,13 @@ class AppSettings {
     this.longBreakMinutes = 15,
     this.longBreakInterval = 4,
     this.notificationEnabled = false,
+    this.autoCompleteTaskOnFocus = false,
+    this.focusMusicEnabled = false,
+    this.focusMusicUri = '',
+    this.focusMusicName = '',
+    this.timelineStartMinutes = 0,
+    this.timelineEndMinutes = 24 * 60,
+    this.autoColorEnabled = true,
   });
 
   final String themeMode;
@@ -26,6 +33,13 @@ class AppSettings {
   final int longBreakMinutes;
   final int longBreakInterval;
   final bool notificationEnabled;
+  final bool autoCompleteTaskOnFocus;
+  final bool focusMusicEnabled;
+  final String focusMusicUri;
+  final String focusMusicName;
+  final int timelineStartMinutes;
+  final int timelineEndMinutes;
+  final bool autoColorEnabled;
 
   AppSettings copyWith({
     String? themeMode,
@@ -38,6 +52,13 @@ class AppSettings {
     int? longBreakMinutes,
     int? longBreakInterval,
     bool? notificationEnabled,
+    bool? autoCompleteTaskOnFocus,
+    bool? focusMusicEnabled,
+    String? focusMusicUri,
+    String? focusMusicName,
+    int? timelineStartMinutes,
+    int? timelineEndMinutes,
+    bool? autoColorEnabled,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     weekViewMode: weekViewMode ?? this.weekViewMode,
@@ -49,5 +70,13 @@ class AppSettings {
     longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
     longBreakInterval: longBreakInterval ?? this.longBreakInterval,
     notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+    autoCompleteTaskOnFocus:
+        autoCompleteTaskOnFocus ?? this.autoCompleteTaskOnFocus,
+    focusMusicEnabled: focusMusicEnabled ?? this.focusMusicEnabled,
+    focusMusicUri: focusMusicUri ?? this.focusMusicUri,
+    focusMusicName: focusMusicName ?? this.focusMusicName,
+    timelineStartMinutes: timelineStartMinutes ?? this.timelineStartMinutes,
+    timelineEndMinutes: timelineEndMinutes ?? this.timelineEndMinutes,
+    autoColorEnabled: autoColorEnabled ?? this.autoColorEnabled,
   );
 }

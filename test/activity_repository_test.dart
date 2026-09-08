@@ -35,11 +35,13 @@ void main() {
         recordDate: date,
         title: '背单词并复盘',
         durationMinutes: 75,
+        isCompleted: false,
       ),
     );
     records = await repository.watchDate(date).first;
     expect(records.single.title, '背单词并复盘');
     expect(records.single.durationMinutes, 75);
+    expect(records.single.isCompleted, isFalse);
 
     await repository.delete(id);
     records = await repository.watchDate(date).first;

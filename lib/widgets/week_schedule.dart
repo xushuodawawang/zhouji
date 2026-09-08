@@ -23,6 +23,8 @@ class WeekSchedule extends StatefulWidget {
     required this.onHourHeightChanged,
     required this.onHourHeightChangeEnd,
     required this.onViewportHeightChanged,
+    this.timelineStartMinutes = 0,
+    this.timelineEndMinutes = 1440,
   });
 
   final DateTime weekStart;
@@ -38,6 +40,8 @@ class WeekSchedule extends StatefulWidget {
   final ValueChanged<double> onHourHeightChanged;
   final VoidCallback onHourHeightChangeEnd;
   final ValueChanged<double> onViewportHeightChanged;
+  final int timelineStartMinutes;
+  final int timelineEndMinutes;
 
   @override
   State<WeekSchedule> createState() => _WeekScheduleState();
@@ -47,9 +51,9 @@ enum _DragMode { move, resizeTop, resizeBottom }
 
 class _WeekScheduleState extends State<WeekSchedule> {
   static const _timeAxisWidth = 56.0;
-  static const _headerHeight = 58.0;
-  static const _slotCount =
-      (AppDateUtils.dayEndMinutes - AppDateUtils.dayStartMinutes) ~/
+  static const _headerHeight = 46.0;
+  int get _slotCount =>
+      (widget.timelineEndMinutes - widget.timelineStartMinutes) ~/
       AppDateUtils.slotMinutes;
 
   double get _slotHeight => TimelinePositionCalculator.slotHeight(
@@ -57,8 +61,11 @@ class _WeekScheduleState extends State<WeekSchedule> {
     slotMinutes: AppDateUtils.slotMinutes,
   );
 
-  double get _gridHeight =>
-      TimelinePositionCalculator.totalHeight(widget.hourHeight);
+  double get _gridHeight => TimelinePositionCalculator.totalHeight(
+    widget.hourHeight,
+    startMinutes: widget.timelineStartMinutes,
+    endMinutes: widget.timelineEndMinutes,
+  );
 
   List<_TaskLayout>? _cachedTaskLayouts;
 
@@ -99,7 +106,9 @@ class _WeekScheduleState extends State<WeekSchedule> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.tasks != widget.tasks ||
         oldWidget.weekStart != widget.weekStart ||
-        oldWidget.hourHeight != widget.hourHeight) {
+        oldWidget.hourHeight != widget.hourHeight ||
+        oldWidget.timelineStartMinutes != widget.timelineStartMinutes ||
+        oldWidget.timelineEndMinutes != widget.timelineEndMinutes) {
       _cachedTaskLayouts = null;
     }
     if (oldWidget.weekStart != widget.weekStart) {
@@ -308,7 +317,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
         final isToday = AppDateUtils.isSameDate(today, date);
         return Container(
           width: _columnWidth,
-          padding: const EdgeInsets.symmetric(vertical: 7),
+          padding: const EdgeInsets.symmetric(vertical: 3),
           decoration: BoxDecoration(
             color:
                 isToday
@@ -361,7 +370,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
             child: Text(
               slot % (60 ~/ AppDateUtils.slotMinutes) == 0
                   ? AppDateUtils.formatMinutes(
-                    AppDateUtils.dayStartMinutes +
+                    widget.timelineStartMinutes +
                         slot * AppDateUtils.slotMinutes,
                   )
                   : '',
@@ -420,13 +429,11 @@ class _WeekScheduleState extends State<WeekSchedule> {
               ),
             ),
           ),
-        if (_dayIndexForDate(now) case final dayIndex?
-            when now.hour * 60 + now.minute >= AppDateUtils.dayStartMinutes &&
-                now.hour * 60 + now.minute <= AppDateUtils.dayEndMinutes)
+        if (_currentTimePosition(now) case final current?)
           Positioned(
-            left: dayIndex * _columnWidth,
+            left: current.dayIndex * _columnWidth,
             top:
-                (now.hour * 60 + now.minute - AppDateUtils.dayStartMinutes) /
+                (current.minutes - widget.timelineStartMinutes) /
                 AppDateUtils.slotMinutes *
                 _slotHeight,
             width: _columnWidth,
@@ -606,9 +613,11 @@ class _WeekScheduleState extends State<WeekSchedule> {
     final day = (details.localPosition.dx / _columnWidth).floor().clamp(0, 6);
     var start = TimeSnapCalculator.nearest(
       _rawMinutesForY(details.localPosition.dy),
+      min: widget.timelineStartMinutes,
+      max: widget.timelineEndMinutes,
     );
-    if (start > AppDateUtils.dayEndMinutes - 60) {
-      start = AppDateUtils.dayEndMinutes - 60;
+    if (start > widget.timelineEndMinutes - 60) {
+      start = widget.timelineEndMinutes - 60;
     }
     widget.onTapEmpty(
       widget.weekStart.add(Duration(days: day)),
@@ -640,7 +649,10 @@ class _WeekScheduleState extends State<WeekSchedule> {
           widget.tasks
               .where(
                 (task) =>
-                    !task.isAllDay && _dayIndexForDate(task.taskDate) == day,
+                    !task.isAllDay &&
+                    task.startMinutes >= widget.timelineStartMinutes &&
+                    task.endMinutes <= widget.timelineEndMinutes &&
+                    _dayIndexForDate(task.taskDate) == day,
               )
               .toList()
             ..sort(
@@ -693,8 +705,8 @@ class _WeekScheduleState extends State<WeekSchedule> {
   void _startCreation(LongPressStartDetails details) {
     final day = (details.localPosition.dx / _columnWidth).floor().clamp(0, 6);
     final start = _minutesForY(details.localPosition.dy).clamp(
-      AppDateUtils.dayStartMinutes,
-      AppDateUtils.dayEndMinutes - AppDateUtils.slotMinutes,
+      widget.timelineStartMinutes,
+      widget.timelineEndMinutes - AppDateUtils.slotMinutes,
     );
     setState(() {
       _creationDay = day;
@@ -714,7 +726,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
     setState(() {
       _creationEnd = end.clamp(
         _creationStart! + AppDateUtils.slotMinutes,
-        AppDateUtils.dayEndMinutes,
+        widget.timelineEndMinutes,
       );
     });
     _updateAutoScroll(details.globalPosition);
@@ -762,8 +774,8 @@ class _WeekScheduleState extends State<WeekSchedule> {
         (delta.dy / _slotHeight).round() * AppDateUtils.slotMinutes;
     final duration = task.durationMinutes;
     final newStart = (task.startMinutes + deltaMinutes).clamp(
-      AppDateUtils.dayStartMinutes,
-      AppDateUtils.dayEndMinutes - duration,
+      widget.timelineStartMinutes,
+      widget.timelineEndMinutes - duration,
     );
     setState(() {
       _activeDraft = PlanTaskDraft.fromTask(task).copyWith(
@@ -798,7 +810,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
     setState(() {
       if (mode == _DragMode.resizeTop) {
         final start = (task.startMinutes + deltaMinutes).clamp(
-          AppDateUtils.dayStartMinutes,
+          widget.timelineStartMinutes,
           task.endMinutes - AppDateUtils.dragMinimumMinutes,
         );
         _activeDraft = PlanTaskDraft.fromTask(task).copyWith(
@@ -808,7 +820,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
       } else {
         final end = (task.endMinutes + deltaMinutes).clamp(
           task.startMinutes + AppDateUtils.dragMinimumMinutes,
-          AppDateUtils.dayEndMinutes,
+          widget.timelineEndMinutes,
         );
         _activeDraft = PlanTaskDraft.fromTask(task).copyWith(
           endMinutes: end,
@@ -847,14 +859,38 @@ class _WeekScheduleState extends State<WeekSchedule> {
 
   int _minutesForY(double y) {
     final slot = (y / _slotHeight).round().clamp(0, _slotCount);
-    return AppDateUtils.dayStartMinutes + slot * AppDateUtils.slotMinutes;
+    return widget.timelineStartMinutes + slot * AppDateUtils.slotMinutes;
   }
 
   int _rawMinutesForY(double y) =>
-      TimelinePositionCalculator.rawMinutesForOffset(y, widget.hourHeight);
+      TimelinePositionCalculator.rawMinutesForOffset(
+        y,
+        widget.hourHeight,
+        startMinutes: widget.timelineStartMinutes,
+      );
 
   double _topForMinutes(int minutes) =>
-      TimelinePositionCalculator.topForMinutes(minutes, widget.hourHeight);
+      TimelinePositionCalculator.topForMinutes(
+        minutes,
+        widget.hourHeight,
+        startMinutes: widget.timelineStartMinutes,
+      );
+
+  ({int dayIndex, int minutes})? _currentTimePosition(DateTime now) {
+    var date = AppDateUtils.dateOnly(now);
+    var minutes = now.hour * 60 + now.minute;
+    if (minutes < widget.timelineStartMinutes &&
+        widget.timelineEndMinutes > AppDateUtils.dayEndMinutes) {
+      date = date.subtract(const Duration(days: 1));
+      minutes += AppDateUtils.dayEndMinutes;
+    }
+    if (minutes < widget.timelineStartMinutes ||
+        minutes > widget.timelineEndMinutes) {
+      return null;
+    }
+    final dayIndex = _dayIndexForDate(date);
+    return dayIndex == null ? null : (dayIndex: dayIndex, minutes: minutes);
+  }
 
   double _heightForRange(int start, int end) =>
       TimelinePositionCalculator.heightForRange(start, end, widget.hourHeight);

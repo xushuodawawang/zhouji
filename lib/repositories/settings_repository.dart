@@ -24,6 +24,13 @@ class SettingsRepository {
       longBreakMinutes: Value(settings.longBreakMinutes),
       longBreakInterval: Value(settings.longBreakInterval),
       notificationEnabled: Value(settings.notificationEnabled),
+      autoCompleteTaskOnFocus: Value(settings.autoCompleteTaskOnFocus),
+      focusMusicEnabled: Value(settings.focusMusicEnabled),
+      focusMusicUri: Value(settings.focusMusicUri),
+      focusMusicName: Value(settings.focusMusicName),
+      timelineStartMinutes: Value(settings.timelineStartMinutes),
+      timelineEndMinutes: Value(settings.timelineEndMinutes),
+      autoColorEnabled: Value(settings.autoColorEnabled),
     ),
   );
 
@@ -38,5 +45,12 @@ class SettingsRepository {
     longBreakMinutes: row.longBreakMinutes,
     longBreakInterval: row.longBreakInterval,
     notificationEnabled: row.notificationEnabled,
+    autoCompleteTaskOnFocus: row.autoCompleteTaskOnFocus,
+    focusMusicEnabled: row.focusMusicEnabled,
+    focusMusicUri: row.focusMusicUri,
+    focusMusicName: row.focusMusicName,
+    timelineStartMinutes: row.timelineStartMinutes,
+    timelineEndMinutes: row.timelineEndMinutes,
+    autoColorEnabled: row.autoColorEnabled,
   );
 }

@@ -27,6 +27,7 @@ class PlanTasks extends Table {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get completedAt => dateTime().nullable()();
   IntColumn get plannedDurationMinutes => integer().nullable()();
+  IntColumn get focusMinutes => integer().nullable()();
 }
 
 @DataClassName('ActivityRecordRow')
@@ -38,6 +39,7 @@ class ActivityRecords extends Table {
   IntColumn get endMinutes => integer().nullable()();
   IntColumn get durationMinutes => integer()();
   TextColumn get note => text().withDefault(const Constant(''))();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 }
@@ -85,6 +87,8 @@ class ActiveTimers extends Table {
   DateTimeColumn get startedAt => dateTime()();
   DateTimeColumn get expectedEndAt => dateTime()();
   IntColumn get remainingSeconds => integer()();
+  IntColumn get totalSeconds => integer().nullable()();
+  TextColumn get title => text().withDefault(const Constant(''))();
   BoolColumn get isRunning => boolean()();
   IntColumn get cycleCount => integer().withDefault(const Constant(0))();
   IntColumn get taskId => integer().nullable()();
@@ -93,6 +97,14 @@ class ActiveTimers extends Table {
 
   @override
   Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('FocusPresetRow')
+class FocusPresets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text()();
+  IntColumn get minutes => integer().withDefault(const Constant(25))();
+  IntColumn get colorValue => integer()();
 }
 
 @DataClassName('MonthlyGoalRow')
@@ -127,6 +139,18 @@ class AppSettingsTable extends Table {
   IntColumn get longBreakInterval => integer().withDefault(const Constant(4))();
   BoolColumn get notificationEnabled =>
       boolean().withDefault(const Constant(false))();
+  BoolColumn get autoCompleteTaskOnFocus =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get focusMusicEnabled =>
+      boolean().withDefault(const Constant(false))();
+  TextColumn get focusMusicUri => text().withDefault(const Constant(''))();
+  TextColumn get focusMusicName => text().withDefault(const Constant(''))();
+  IntColumn get timelineStartMinutes =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get timelineEndMinutes =>
+      integer().withDefault(const Constant(1440))();
+  BoolColumn get autoColorEnabled =>
+      boolean().withDefault(const Constant(true))();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -166,6 +190,7 @@ class TaskConflictException implements Exception {
     ActiveTimers,
     MonthlyGoals,
     AppSettingsTable,
+    FocusPresets,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -174,7 +199,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -201,6 +226,43 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(
           appSettingsTable,
           appSettingsTable.overviewHourHeight,
+        );
+      }
+      if (from < 4) {
+        await migrator.createTable(focusPresets);
+        await migrator.addColumn(planTasks, planTasks.focusMinutes);
+        await migrator.addColumn(activityRecords, activityRecords.isCompleted);
+      }
+      if (from >= 2 && from < 4) {
+        await migrator.addColumn(activeTimers, activeTimers.totalSeconds);
+        await migrator.addColumn(activeTimers, activeTimers.title);
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.autoCompleteTaskOnFocus,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.focusMusicEnabled,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.focusMusicUri,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.focusMusicName,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.timelineStartMinutes,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.timelineEndMinutes,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.autoColorEnabled,
         );
       }
     },
@@ -283,21 +345,35 @@ class AppDatabase extends _$AppDatabase {
         final date = data.taskDate.value;
         final start = data.startMinutes.value;
         final end = data.endMinutes.value;
-        final conflictQuery =
-            select(planTasks)
-              ..where((row) {
-                var predicate =
-                    row.taskDate.equals(date) &
-                    row.isAllDay.equals(false) &
-                    row.startMinutes.isSmallerThanValue(end) &
-                    row.endMinutes.isBiggerThanValue(start);
-                if (taskId != null) {
-                  predicate = predicate & row.id.equals(taskId).not();
-                }
-                return predicate;
-              })
-              ..limit(1);
-        final conflict = await conflictQuery.getSingleOrNull();
+        final conflictQuery = select(planTasks)..where((row) {
+          var predicate =
+              row.taskDate.isBiggerOrEqualValue(
+                date.subtract(const Duration(days: 2)),
+              ) &
+              row.taskDate.isSmallerOrEqualValue(
+                date.add(const Duration(days: 2)),
+              ) &
+              row.isAllDay.equals(false);
+          if (taskId != null) {
+            predicate = predicate & row.id.equals(taskId).not();
+          }
+          return predicate;
+        });
+        final candidates = await conflictQuery.get();
+        final absoluteStart = date.add(Duration(minutes: start));
+        final absoluteEnd = date.add(Duration(minutes: end));
+        final conflict =
+            candidates
+                .where(
+                  (row) =>
+                      row.taskDate
+                          .add(Duration(minutes: row.startMinutes))
+                          .isBefore(absoluteEnd) &&
+                      row.taskDate
+                          .add(Duration(minutes: row.endMinutes))
+                          .isAfter(absoluteStart),
+                )
+                .firstOrNull;
         if (conflict != null) {
           throw TaskConflictException(
             conflict.title,

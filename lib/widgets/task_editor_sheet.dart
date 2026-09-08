@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
+import '../models/app_settings.dart';
 import '../models/plan_task.dart';
 import '../providers/app_providers.dart';
 import '../repositories/plan_task_repository.dart';
@@ -71,6 +72,7 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _noteController;
+  late final TextEditingController _focusMinutesController;
   late DateTime _date;
   late int _startMinutes;
   late int _endMinutes;
@@ -91,6 +93,9 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
     final task = widget.task;
     _titleController = TextEditingController(text: task?.title);
     _noteController = TextEditingController(text: task?.note);
+    _focusMinutesController = TextEditingController(
+      text: task?.focusMinutes?.toString() ?? '',
+    );
     _date = AppDateUtils.dateOnly(
       task?.taskDate ?? widget.initialDate ?? DateTime.now(),
     );
@@ -103,6 +108,7 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
     _isLocked = task?.isLocked ?? false;
     _titleController.addListener(_markDirty);
     _noteController.addListener(_markDirty);
+    _focusMinutesController.addListener(_markDirty);
   }
 
   @override
@@ -111,6 +117,9 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
       ..removeListener(_markDirty)
       ..dispose();
     _noteController
+      ..removeListener(_markDirty)
+      ..dispose();
+    _focusMinutesController
       ..removeListener(_markDirty)
       ..dispose();
     super.dispose();
@@ -131,6 +140,8 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final settings =
+        ref.watch(appSettingsProvider).valueOrNull ?? const AppSettings();
     final viewInsets = MediaQuery.viewInsetsOf(context);
     final screen = MediaQuery.sizeOf(context);
     final sheetHeight = math.max(
@@ -267,6 +278,33 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
                               ),
                             ),
                           ],
+                          if (!_isAllDay) ...[
+                            const SizedBox(height: 10),
+                            TextFormField(
+                              controller: _focusMinutesController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: '本任务单次专注时长',
+                                hintText:
+                                    '默认 ${settings.pomodoroFocusMinutes} 分钟',
+                                suffixText: '分钟',
+                                prefixIcon: const Icon(Icons.timer_outlined),
+                                helperText: '例如数学任务可设为 60；留空使用全局番茄时长',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return null;
+                                }
+                                final minutes = int.tryParse(value);
+                                if (minutes == null ||
+                                    minutes < 1 ||
+                                    minutes > 240) {
+                                  return '请输入 1－240 分钟';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
                           const SizedBox(height: 8),
                           DropdownButtonFormField<int>(
                             key: ValueKey('category-${_categoryId ?? 0}'),
@@ -300,59 +338,70 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
                                 }),
                           ),
                           const SizedBox(height: 14),
-                          Text(
-                            '任务颜色',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 10,
-                            children: [
-                              for (final color in AppColors.taskPalette)
-                                Semantics(
-                                  label: '选择任务颜色',
-                                  selected: color.toARGB32() == _colorValue,
-                                  child: InkWell(
-                                    customBorder: const CircleBorder(),
-                                    onTap:
-                                        () => _change(
-                                          () => _colorValue = color.toARGB32(),
-                                        ),
-                                    child: SizedBox.square(
-                                      dimension: 48,
-                                      child: Center(
-                                        child: Container(
-                                          width: 44,
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            color: color,
-                                            shape: BoxShape.circle,
-                                            border:
+                          if (settings.autoColorEnabled)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.auto_awesome_outlined),
+                              title: const Text('自动配色已开启'),
+                              subtitle: const Text('优先使用分类颜色；未分类时同名科目保持同色'),
+                            )
+                          else ...[
+                            Text(
+                              '任务颜色',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 10,
+                              children: [
+                                for (final color in AppColors.taskPalette)
+                                  Semantics(
+                                    label: '选择任务颜色',
+                                    selected: color.toARGB32() == _colorValue,
+                                    child: InkWell(
+                                      customBorder: const CircleBorder(),
+                                      onTap:
+                                          () => _change(
+                                            () =>
+                                                _colorValue = color.toARGB32(),
+                                          ),
+                                      child: SizedBox.square(
+                                        dimension: 48,
+                                        child: Center(
+                                          child: Container(
+                                            width: 44,
+                                            height: 44,
+                                            decoration: BoxDecoration(
+                                              color: color,
+                                              shape: BoxShape.circle,
+                                              border:
+                                                  color.toARGB32() ==
+                                                          _colorValue
+                                                      ? Border.all(
+                                                        color:
+                                                            Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurface,
+                                                        width: 2,
+                                                      )
+                                                      : null,
+                                            ),
+                                            child:
                                                 color.toARGB32() == _colorValue
-                                                    ? Border.all(
-                                                      color:
-                                                          Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurface,
-                                                      width: 2,
+                                                    ? const Icon(
+                                                      Icons.check,
+                                                      size: 19,
                                                     )
                                                     : null,
                                           ),
-                                          child:
-                                              color.toARGB32() == _colorValue
-                                                  ? const Icon(
-                                                    Icons.check,
-                                                    size: 19,
-                                                  )
-                                                  : null,
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -427,7 +476,10 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
   }
 
   Future<void> _pickTime({required bool isStart}) async {
-    final current = isStart ? _startMinutes : _endMinutes.clamp(0, 1439);
+    final current = ((isStart ? _startMinutes : _endMinutes) % 1440).clamp(
+      0,
+      1439,
+    );
     final value = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
@@ -439,17 +491,15 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
           ),
     );
     if (value == null) return;
-    final minutes = value.hour * 60 + value.minute;
+    var minutes = value.hour * 60 + value.minute;
     if (isStart) {
-      if (minutes >= _endMinutes) {
-        setState(() => _timeError = '开始时间必须早于结束时间');
-        return;
-      }
-      _change(() => _startMinutes = minutes);
+      _change(() {
+        _startMinutes = minutes;
+        if (minutes >= _endMinutes) _endMinutes = minutes + 60;
+      });
     } else {
       if (minutes <= _startMinutes) {
-        setState(() => _timeError = '结束时间必须晚于开始时间');
-        return;
+        minutes += 1440;
       }
       _change(() => _endMinutes = minutes);
     }
@@ -457,11 +507,8 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
 
   void _adjustStart(int delta) {
     final value = _startMinutes + delta;
-    if (value < AppDateUtils.dayStartMinutes ||
-        value >
-            AppDateUtils.dayEndMinutes - AppDateUtils.manualMinimumMinutes ||
-        value >= _endMinutes) {
-      setState(() => _timeError = '开始时间须在 07:00 后且早于结束时间');
+    if (value < 0 || value >= 1440 || value >= _endMinutes) {
+      setState(() => _timeError = '开始时间须早于结束时间');
       return;
     }
     _change(() => _startMinutes = value);
@@ -469,11 +516,10 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
 
   void _adjustEnd(int delta) {
     final value = _endMinutes + delta;
-    if (value > AppDateUtils.dayEndMinutes ||
-        value <
-            AppDateUtils.dayStartMinutes + AppDateUtils.manualMinimumMinutes ||
+    if (value > AppDateUtils.maximumTimelineMinutes ||
+        value < AppDateUtils.manualMinimumMinutes ||
         value <= _startMinutes) {
-      setState(() => _timeError = '结束时间须在 24:00 前且晚于开始时间');
+      setState(() => _timeError = '结束时间须在次日 06:00 前且晚于开始时间');
       return;
     }
     _change(() => _endMinutes = value);
@@ -482,22 +528,32 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
   PlanTaskDraft? _draft() {
     if (!_formKey.currentState!.validate()) return null;
     if (!_isAllDay &&
-        (_startMinutes < AppDateUtils.dayStartMinutes ||
-            _endMinutes > AppDateUtils.dayEndMinutes ||
+        (_startMinutes < 0 ||
+            _endMinutes > AppDateUtils.maximumTimelineMinutes ||
             _endMinutes - _startMinutes < AppDateUtils.manualMinimumMinutes)) {
       setState(() {
-        _timeError = '时间须在 07:00－24:00，且任务不少于 5 分钟';
+        _timeError = '任务不少于 5 分钟，结束时间最晚为次日 06:00';
       });
       return null;
     }
     final old = widget.task;
+    final settings =
+        ref.read(appSettingsProvider).valueOrNull ?? const AppSettings();
+    final title = _titleController.text.trim();
+    var color = _colorValue;
+    if (settings.autoColorEnabled) {
+      final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
+      final category =
+          categories.where((item) => item.id == _categoryId).firstOrNull;
+      color = category?.colorValue ?? AppColors.automaticTaskColor(title);
+    }
     return PlanTaskDraft(
       id: old?.id,
-      title: _titleController.text.trim(),
+      title: title,
       taskDate: _date,
-      startMinutes: _isAllDay ? AppDateUtils.dayStartMinutes : _startMinutes,
-      endMinutes: _isAllDay ? AppDateUtils.dayStartMinutes + 5 : _endMinutes,
-      colorValue: _colorValue,
+      startMinutes: _isAllDay ? 0 : _startMinutes,
+      endMinutes: _isAllDay ? 5 : _endMinutes,
+      colorValue: color,
       note: _noteController.text.trim(),
       isCompleted: _isCompleted,
       categoryId: _categoryId,
@@ -506,6 +562,8 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
       sortOrder: old?.sortOrder ?? 0,
       completedAt: _isCompleted ? old?.completedAt ?? DateTime.now() : null,
       plannedDurationMinutes: _isAllDay ? null : _endMinutes - _startMinutes,
+      focusMinutes:
+          _isAllDay ? null : int.tryParse(_focusMinutesController.text.trim()),
     );
   }
 

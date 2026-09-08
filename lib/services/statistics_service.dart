@@ -127,16 +127,21 @@ class StatisticsService {
       plannedMinutes: tasks
           .where((task) => !task.isAllDay)
           .fold(0, (sum, task) => sum + task.durationMinutes),
-      actualRecordMinutes: records.fold(
-        0,
-        (sum, record) => sum + record.durationMinutes,
-      ),
+      actualRecordMinutes: records
+          .where((record) => record.isCompleted)
+          .fold(0, (sum, record) => sum + record.durationMinutes),
       focusMinutes: sessions.fold(
         0,
         (sum, session) => sum + session.actualMinutes,
       ),
       focusCount: sessions.length,
-      completedPomodoros: sessions.where((session) => session.completed).length,
+      completedPomodoros:
+          sessions
+              .where(
+                (session) =>
+                    session.completed && session.mode == TimerMode.pomodoro,
+              )
+              .length,
       categoryStats: categoryStats,
       trend: _buildTrend(range, period, sessions),
     );

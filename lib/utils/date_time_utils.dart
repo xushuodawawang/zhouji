@@ -1,8 +1,9 @@
 import 'package:intl/intl.dart';
 
 abstract final class AppDateUtils {
-  static const int dayStartMinutes = 7 * 60;
+  static const int dayStartMinutes = 0;
   static const int dayEndMinutes = 24 * 60;
+  static const int maximumTimelineMinutes = 30 * 60;
   static const int slotMinutes = 15;
   static const int manualMinimumMinutes = 5;
   static const int dragMinimumMinutes = 15;
@@ -48,10 +49,14 @@ abstract final class AppDateUtils {
 
   static String formatMinutes(int minutes) {
     if (minutes == dayEndMinutes) return '24:00';
-    final hour = minutes ~/ 60;
-    final minute = minutes % 60;
-    return '${hour.toString().padLeft(2, '0')}:'
+    final nextDay = minutes > dayEndMinutes;
+    final normalized = minutes % dayEndMinutes;
+    final hour = normalized ~/ 60;
+    final minute = normalized % 60;
+    final clock =
+        '${hour.toString().padLeft(2, '0')}:'
         '${minute.toString().padLeft(2, '0')}';
+    return nextDay ? '次日 $clock' : clock;
   }
 
   static String formatDuration(int minutes) {

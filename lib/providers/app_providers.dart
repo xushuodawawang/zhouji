@@ -15,6 +15,7 @@ import '../repositories/goal_repository.dart';
 import '../repositories/plan_task_repository.dart';
 import '../repositories/settings_repository.dart';
 import '../services/notification_service.dart';
+import '../services/focus_music_service.dart';
 import '../services/statistics_service.dart';
 import '../utils/date_time_utils.dart';
 import 'focus_timer_controller.dart';
@@ -53,11 +54,20 @@ final notificationServiceProvider = Provider<NotificationService>(
   (ref) => NotificationService(),
 );
 
+final focusMusicServiceProvider = Provider<FocusMusicService>(
+  (ref) => FocusMusicService(),
+);
+
 final focusTimerProvider =
     StateNotifierProvider<FocusTimerController, FocusTimerState>((ref) {
       final controller = FocusTimerController(
         repository: ref.watch(focusRepositoryProvider),
         notifications: ref.watch(notificationServiceProvider),
+        music: ref.watch(focusMusicServiceProvider),
+        loadSettings: ref.read(settingsRepositoryProvider).get,
+        onTaskFocusCompleted:
+            (taskId) =>
+                ref.read(planTaskRepositoryProvider).setCompleted(taskId, true),
         settings:
             ref.read(appSettingsProvider).valueOrNull ?? const AppSettings(),
       );
@@ -104,8 +114,26 @@ final selectedDateTasksProvider = StreamProvider<List<PlanTask>>((ref) {
 });
 
 final todayTasksProvider = StreamProvider<List<PlanTask>>((ref) {
+  ref.watch(currentMinuteProvider.select((v) => v.valueOrNull?.day));
   return ref.watch(planTaskRepositoryProvider).watchDate(DateTime.now());
 });
+
+final focusCandidateTasksProvider = StreamProvider<List<PlanTask>>((ref) {
+  ref.watch(currentMinuteProvider.select((v) => v.valueOrNull?.day));
+  final day = AppDateUtils.dateOnly(DateTime.now());
+  return ref
+      .watch(planTaskRepositoryProvider)
+      .watchBetween(
+        day.subtract(const Duration(days: 1)),
+        day.add(const Duration(days: 1)),
+      );
+});
+
+final allFocusSessionsProvider = StreamProvider<List<FocusSession>>(
+  (ref) => ref
+      .watch(focusRepositoryProvider)
+      .watchBetween(DateTime(1970), DateTime(2200)),
+);
 
 final selectedMonthTasksProvider = StreamProvider<List<PlanTask>>((ref) {
   final month = ref.watch(selectedMonthProvider);
@@ -126,6 +154,7 @@ final selectedMonthGoalsProvider = StreamProvider<List<MonthlyGoal>>((ref) {
 });
 
 final todayFocusSessionsProvider = StreamProvider<List<FocusSession>>((ref) {
+  ref.watch(currentMinuteProvider.select((v) => v.valueOrNull?.day));
   final start = AppDateUtils.dateOnly(DateTime.now());
   return ref
       .watch(focusRepositoryProvider)

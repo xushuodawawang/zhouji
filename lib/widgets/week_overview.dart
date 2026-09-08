@@ -8,7 +8,7 @@ import '../utils/app_colors.dart';
 import '../utils/timeline_position_calculator.dart';
 import 'task_title.dart';
 
-/// A compact, non-scrolling view of the full 07:00–24:00 week.
+/// A compact view of the configured study day.
 class WeekOverview extends StatelessWidget {
   const WeekOverview({
     super.key,
@@ -17,6 +17,8 @@ class WeekOverview extends StatelessWidget {
     required this.hourHeight,
     required this.onTaskTap,
     required this.onDayTap,
+    this.timelineStartMinutes = 0,
+    this.timelineEndMinutes = 1440,
   });
 
   final DateTime weekStart;
@@ -24,6 +26,8 @@ class WeekOverview extends StatelessWidget {
   final double hourHeight;
   final ValueChanged<PlanTask> onTaskTap;
   final ValueChanged<DateTime> onDayTap;
+  final int timelineStartMinutes;
+  final int timelineEndMinutes;
 
   static const _axisWidth = 42.0;
   static const _headerHeight = 46.0;
@@ -37,6 +41,8 @@ class WeekOverview extends StatelessWidget {
         );
         final gridHeight = TimelinePositionCalculator.totalHeight(
           effectiveHourHeight,
+          startMinutes: timelineStartMinutes,
+          endMinutes: timelineEndMinutes,
         );
         final columnWidth = math.max(
           1.0,
@@ -69,6 +75,8 @@ class WeekOverview extends StatelessWidget {
                         child: _TimeAxis(
                           height: gridHeight,
                           hourHeight: effectiveHourHeight,
+                          startMinutes: timelineStartMinutes,
+                          endMinutes: timelineEndMinutes,
                         ),
                       ),
                       Expanded(
@@ -117,6 +125,7 @@ class WeekOverview extends StatelessWidget {
                                       TimelinePositionCalculator.topForMinutes(
                                         layout.task.startMinutes,
                                         effectiveHourHeight,
+                                        startMinutes: timelineStartMinutes,
                                       ) +
                                       1,
                                   width: math.max(
@@ -193,7 +202,11 @@ class WeekOverview extends StatelessWidget {
       final dayTasks =
           tasks
               .where(
-                (task) => !task.isAllDay && _dayIndex(task.taskDate) == day,
+                (task) =>
+                    !task.isAllDay &&
+                    task.startMinutes >= timelineStartMinutes &&
+                    task.endMinutes <= timelineEndMinutes &&
+                    _dayIndex(task.taskDate) == day,
               )
               .toList()
             ..sort(
@@ -227,6 +240,7 @@ class WeekOverview extends StatelessWidget {
         final top = TimelinePositionCalculator.topForMinutes(
           task.startMinutes,
           hourHeight,
+          startMinutes: timelineStartMinutes,
         );
         final visualEnd =
             top +
@@ -319,14 +333,25 @@ class _DayHeader extends StatelessWidget {
 }
 
 class _TimeAxis extends StatelessWidget {
-  const _TimeAxis({required this.height, required this.hourHeight});
+  const _TimeAxis({
+    required this.height,
+    required this.hourHeight,
+    required this.startMinutes,
+    required this.endMinutes,
+  });
 
   final double height;
   final double hourHeight;
+  final int startMinutes;
+  final int endMinutes;
 
   @override
   Widget build(BuildContext context) {
-    const labels = [420, 720, 1080, 1440];
+    final labels = <int>[
+      for (var value = startMinutes; value <= endMinutes; value += 6 * 60)
+        value,
+      if ((endMinutes - startMinutes) % (6 * 60) != 0) endMinutes,
+    ];
     return Stack(
       children: [
         for (final minutes in labels)
@@ -336,8 +361,12 @@ class _TimeAxis extends StatelessWidget {
               height - 12,
               math.max(
                 0,
-                TimelinePositionCalculator.topForMinutes(minutes, hourHeight) -
-                    (minutes == 420 ? 0 : 5),
+                TimelinePositionCalculator.topForMinutes(
+                      minutes,
+                      hourHeight,
+                      startMinutes: startMinutes,
+                    ) -
+                    (minutes == startMinutes ? 0 : 5),
               ),
             ),
             child: Text(
@@ -388,7 +417,7 @@ class _OverviewGridPainter extends CustomPainter {
         line,
       );
     }
-    for (var hour = 0; hour <= 17; hour++) {
+    for (var hour = 0; hour <= size.height / hourHeight; hour++) {
       final y = hour * hourHeight;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
     }

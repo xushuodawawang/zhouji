@@ -16,7 +16,9 @@ class NotificationService {
     tz.initializeTimeZones();
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@drawable/ic_launcher_foreground'),
+        android: AndroidInitializationSettings(
+          '@drawable/ic_launcher_foreground',
+        ),
       ),
     );
     _initialized = true;

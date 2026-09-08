@@ -18,6 +18,7 @@ class PlanTask {
     this.sortOrder = 0,
     this.completedAt,
     this.plannedDurationMinutes,
+    this.focusMinutes,
   });
 
   final int id;
@@ -36,6 +37,7 @@ class PlanTask {
   final int sortOrder;
   final DateTime? completedAt;
   final int? plannedDurationMinutes;
+  final int? focusMinutes;
 
   int get durationMinutes =>
       plannedDurationMinutes ?? (endMinutes - startMinutes);
@@ -73,6 +75,7 @@ class PlanTask {
     DateTime? completedAt,
     bool clearCompletedAt = false,
     int? plannedDurationMinutes,
+    int? focusMinutes,
   }) {
     return PlanTask(
       id: id ?? this.id,
@@ -92,6 +95,7 @@ class PlanTask {
       completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
       plannedDurationMinutes:
           plannedDurationMinutes ?? this.plannedDurationMinutes,
+      focusMinutes: focusMinutes ?? this.focusMinutes,
     );
   }
 }
@@ -112,6 +116,7 @@ class PlanTaskDraft {
     this.sortOrder = 0,
     this.completedAt,
     this.plannedDurationMinutes,
+    this.focusMinutes,
   });
 
   factory PlanTaskDraft.fromTask(PlanTask task) => PlanTaskDraft(
@@ -129,6 +134,7 @@ class PlanTaskDraft {
     sortOrder: task.sortOrder,
     completedAt: task.completedAt,
     plannedDurationMinutes: task.plannedDurationMinutes,
+    focusMinutes: task.focusMinutes,
   );
 
   final int? id;
@@ -145,6 +151,7 @@ class PlanTaskDraft {
   final int sortOrder;
   final DateTime? completedAt;
   final int? plannedDurationMinutes;
+  final int? focusMinutes;
 
   PlanTaskDraft copyWith({
     int? id,
@@ -164,6 +171,7 @@ class PlanTaskDraft {
     DateTime? completedAt,
     bool clearCompletedAt = false,
     int? plannedDurationMinutes,
+    int? focusMinutes,
   }) {
     return PlanTaskDraft(
       id: clearId ? null : id ?? this.id,
@@ -181,6 +189,7 @@ class PlanTaskDraft {
       completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
       plannedDurationMinutes:
           plannedDurationMinutes ?? this.plannedDurationMinutes,
+      focusMinutes: focusMinutes ?? this.focusMinutes,
     );
   }
 }

@@ -10,6 +10,8 @@ import '../services/statistics_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/date_time_utils.dart';
 import '../widgets/page_heading.dart';
+import '../widgets/focus_dashboard.dart';
+import '../widgets/timeline_settings_sheet.dart';
 
 class StatisticsPage extends ConsumerStatefulWidget {
   const StatisticsPage({super.key});
@@ -39,58 +41,83 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
           ref.invalidate(statisticsDataProvider(_range));
           await ref.read(statisticsDataProvider(_range).future);
         },
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
-          children: [
-            PageHeading(
-              title: '统计',
-              subtitle: '看见积累，也看见自己的进步',
-              trailing: IconButton.filledTonal(
-                tooltip: '设置',
-                onPressed: () => _showSettings(context),
-                icon: const Icon(Icons.settings_outlined),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? [
+                        const Color(0xFF153D43),
+                        Theme.of(context).colorScheme.surface,
+                      ]
+                      : [const Color(0xFF68DEEA), const Color(0xFFEFF5F5)],
+            ),
+          ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+            children: [
+              PageHeading(
+                title: '统计数据',
+                subtitle: '看见积累，也看见自己的进步',
+                trailing: IconButton.filledTonal(
+                  tooltip: '设置',
+                  onPressed: () => _showSettings(context),
+                  icon: const Icon(Icons.settings_outlined),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<StatisticsRange>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: StatisticsRange.today, label: Text('今天')),
-                ButtonSegment(value: StatisticsRange.week, label: Text('本周')),
-                ButtonSegment(value: StatisticsRange.month, label: Text('本月')),
-              ],
-              selected: {_range},
-              onSelectionChanged:
-                  (value) => setState(() => _range = value.first),
-            ),
-            const SizedBox(height: 16),
-            data.when(
-              data: (value) => _StatisticsContent(data: value, range: _range),
-              loading:
-                  () => const Padding(
-                    padding: EdgeInsets.all(48),
-                    child: Center(child: CircularProgressIndicator()),
+              const SizedBox(height: 8),
+              const FocusDashboard(),
+              const SizedBox(height: 8),
+              Text('计划执行情况', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              SegmentedButton<StatisticsRange>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(
+                    value: StatisticsRange.today,
+                    label: Text('今天'),
                   ),
-              error:
-                  (_, __) => Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          const Text('统计加载失败'),
-                          TextButton(
-                            onPressed:
-                                () => ref.invalidate(
-                                  statisticsDataProvider(_range),
-                                ),
-                            child: const Text('重试'),
-                          ),
-                        ],
+                  ButtonSegment(value: StatisticsRange.week, label: Text('本周')),
+                  ButtonSegment(
+                    value: StatisticsRange.month,
+                    label: Text('本月'),
+                  ),
+                ],
+                selected: {_range},
+                onSelectionChanged:
+                    (value) => setState(() => _range = value.first),
+              ),
+              const SizedBox(height: 16),
+              data.when(
+                data: (value) => _StatisticsContent(data: value, range: _range),
+                loading:
+                    () => const Padding(
+                      padding: EdgeInsets.all(48),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                error:
+                    (_, __) => Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            const Text('统计加载失败'),
+                            TextButton(
+                              onPressed:
+                                  () => ref.invalidate(
+                                    statisticsDataProvider(_range),
+                                  ),
+                              child: const Text('重试'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -450,6 +477,13 @@ class _SettingsSheet extends ConsumerWidget {
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('时间轴与自动配色'),
+                subtitle: const Text('全天 24 小时、跨天显示'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showTimelineSettings(context),
+              ),
               DropdownButtonFormField<String>(
                 initialValue: settings.themeMode,
                 decoration: const InputDecoration(

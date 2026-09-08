@@ -17,6 +17,11 @@ class ZhoujiApp extends ConsumerWidget {
     return MaterialApp(
       title: '周迹',
       debugShowCheckedModeBanner: false,
+      builder:
+          (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child!,
+          ),
       locale: const Locale('zh', 'CN'),
       supportedLocales: const [Locale('zh', 'CN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

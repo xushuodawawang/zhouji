@@ -41,6 +41,8 @@ class ActiveTimer {
     required this.cycleCount,
     this.taskId,
     this.categoryId,
+    this.totalSeconds,
+    this.title = '',
   });
 
   final TimerMode mode;
@@ -52,4 +54,6 @@ class ActiveTimer {
   final int cycleCount;
   final int? taskId;
   final int? categoryId;
+  final int? totalSeconds;
+  final String title;
 }

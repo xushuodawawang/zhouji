@@ -11,11 +11,12 @@ void main() {
       expect(AppDateUtils.weekRangeLabel(date), '7月20日－26日');
     });
 
-    test('拖动时间吸附到15分钟并限制在07:00至24:00', () {
+    test('拖动时间吸附到15分钟并限制在00:00至24:00', () {
       expect(AppDateUtils.snapMinutes(421), 420);
       expect(AppDateUtils.snapMinutes(442), 435);
       expect(AppDateUtils.snapMinutes(443), 450);
-      expect(AppDateUtils.snapMinutes(200), 420);
+      expect(AppDateUtils.snapMinutes(200), 195);
+      expect(AppDateUtils.snapMinutes(-20), 0);
       expect(AppDateUtils.snapMinutes(1500), 1440);
       expect(AppDateUtils.formatMinutes(450), '07:30');
       expect(AppDateUtils.formatMinutes(1440), '24:00');

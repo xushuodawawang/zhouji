@@ -377,13 +377,24 @@ class _ActivityList extends StatelessWidget {
           for (var index = 0; index < records.length; index++) ...[
             ListTile(
               onTap: () => onTap(records[index]),
-              leading: const Icon(Icons.check_circle_outline),
+              leading: Icon(
+                records[index].isCompleted
+                    ? Icons.check_circle_outline
+                    : Icons.pending_outlined,
+                color:
+                    records[index].isCompleted
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               title: Text(
                 records[index].title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              subtitle: Text(_recordSubtitle(records[index])),
+              subtitle: Text(
+                '${_recordSubtitle(records[index])} · '
+                '${records[index].isCompleted ? '已完成' : '未完成'}',
+              ),
               trailing: const Icon(Icons.edit_outlined, size: 19),
             ),
             if (index != records.length - 1)
@@ -417,10 +428,9 @@ class _StatisticsCard extends StatelessWidget {
       0,
       (sum, task) => sum + task.durationMinutes,
     );
-    final actualMinutes = records.fold<int>(
-      0,
-      (sum, record) => sum + record.durationMinutes,
-    );
+    final actualMinutes = records
+        .where((record) => record.isCompleted)
+        .fold<int>(0, (sum, record) => sum + record.durationMinutes);
     final rate = tasks.isEmpty ? 0 : (completed / tasks.length * 100).round();
     final items = [
       ('计划任务', '${tasks.length}项'),

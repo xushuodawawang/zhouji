@@ -67,7 +67,7 @@ void main() {
 
     await tester.tap(find.text('统计').last);
     await _pumpFrames(tester);
-    expect(find.text('专注时间分布'), findsOneWidget);
+    expect(find.text('累计专注'), findsOneWidget);
     expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
     expect(tester.takeException(), isNull);
     await _disposeApp(tester, database);

@@ -51,6 +51,7 @@ class ActivityRepository {
           endMinutes: Value(draft.endMinutes),
           durationMinutes: Value(draft.durationMinutes),
           note: Value(draft.note.trim()),
+          isCompleted: Value(draft.isCompleted),
           createdAt: draft.id == null ? Value(now) : const Value.absent(),
           updatedAt: Value(now),
         ),
@@ -105,6 +106,7 @@ class ActivityRepository {
     endMinutes: row.endMinutes,
     durationMinutes: row.durationMinutes,
     note: row.note,
+    isCompleted: row.isCompleted,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   );

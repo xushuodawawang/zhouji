@@ -200,6 +200,17 @@ class $PlanTasksTable extends PlanTasks
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _focusMinutesMeta = const VerificationMeta(
+    'focusMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> focusMinutes = GeneratedColumn<int>(
+    'focus_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -218,6 +229,7 @@ class $PlanTasksTable extends PlanTasks
     sortOrder,
     completedAt,
     plannedDurationMinutes,
+    focusMinutes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -350,6 +362,15 @@ class $PlanTasksTable extends PlanTasks
         ),
       );
     }
+    if (data.containsKey('focus_minutes')) {
+      context.handle(
+        _focusMinutesMeta,
+        focusMinutes.isAcceptableOrUnknown(
+          data['focus_minutes']!,
+          _focusMinutesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -436,6 +457,10 @@ class $PlanTasksTable extends PlanTasks
         DriftSqlType.int,
         data['${effectivePrefix}planned_duration_minutes'],
       ),
+      focusMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}focus_minutes'],
+      ),
     );
   }
 
@@ -462,6 +487,7 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
   final int sortOrder;
   final DateTime? completedAt;
   final int? plannedDurationMinutes;
+  final int? focusMinutes;
   const PlanTaskRow({
     required this.id,
     required this.title,
@@ -479,6 +505,7 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
     required this.sortOrder,
     this.completedAt,
     this.plannedDurationMinutes,
+    this.focusMinutes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -504,6 +531,9 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
     }
     if (!nullToAbsent || plannedDurationMinutes != null) {
       map['planned_duration_minutes'] = Variable<int>(plannedDurationMinutes);
+    }
+    if (!nullToAbsent || focusMinutes != null) {
+      map['focus_minutes'] = Variable<int>(focusMinutes);
     }
     return map;
   }
@@ -535,6 +565,10 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
           plannedDurationMinutes == null && nullToAbsent
               ? const Value.absent()
               : Value(plannedDurationMinutes),
+      focusMinutes:
+          focusMinutes == null && nullToAbsent
+              ? const Value.absent()
+              : Value(focusMinutes),
     );
   }
 
@@ -562,6 +596,7 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
       plannedDurationMinutes: serializer.fromJson<int?>(
         json['plannedDurationMinutes'],
       ),
+      focusMinutes: serializer.fromJson<int?>(json['focusMinutes']),
     );
   }
   @override
@@ -584,6 +619,7 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
       'sortOrder': serializer.toJson<int>(sortOrder),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
       'plannedDurationMinutes': serializer.toJson<int?>(plannedDurationMinutes),
+      'focusMinutes': serializer.toJson<int?>(focusMinutes),
     };
   }
 
@@ -604,6 +640,7 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
     int? sortOrder,
     Value<DateTime?> completedAt = const Value.absent(),
     Value<int?> plannedDurationMinutes = const Value.absent(),
+    Value<int?> focusMinutes = const Value.absent(),
   }) => PlanTaskRow(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -624,6 +661,7 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
         plannedDurationMinutes.present
             ? plannedDurationMinutes.value
             : this.plannedDurationMinutes,
+    focusMinutes: focusMinutes.present ? focusMinutes.value : this.focusMinutes,
   );
   PlanTaskRow copyWithCompanion(PlanTasksCompanion data) {
     return PlanTaskRow(
@@ -654,6 +692,10 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
           data.plannedDurationMinutes.present
               ? data.plannedDurationMinutes.value
               : this.plannedDurationMinutes,
+      focusMinutes:
+          data.focusMinutes.present
+              ? data.focusMinutes.value
+              : this.focusMinutes,
     );
   }
 
@@ -675,7 +717,8 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
           ..write('isAllDay: $isAllDay, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('completedAt: $completedAt, ')
-          ..write('plannedDurationMinutes: $plannedDurationMinutes')
+          ..write('plannedDurationMinutes: $plannedDurationMinutes, ')
+          ..write('focusMinutes: $focusMinutes')
           ..write(')'))
         .toString();
   }
@@ -698,6 +741,7 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
     sortOrder,
     completedAt,
     plannedDurationMinutes,
+    focusMinutes,
   );
   @override
   bool operator ==(Object other) =>
@@ -718,7 +762,8 @@ class PlanTaskRow extends DataClass implements Insertable<PlanTaskRow> {
           other.isAllDay == this.isAllDay &&
           other.sortOrder == this.sortOrder &&
           other.completedAt == this.completedAt &&
-          other.plannedDurationMinutes == this.plannedDurationMinutes);
+          other.plannedDurationMinutes == this.plannedDurationMinutes &&
+          other.focusMinutes == this.focusMinutes);
 }
 
 class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
@@ -738,6 +783,7 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
   final Value<int> sortOrder;
   final Value<DateTime?> completedAt;
   final Value<int?> plannedDurationMinutes;
+  final Value<int?> focusMinutes;
   const PlanTasksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -755,6 +801,7 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
     this.sortOrder = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.plannedDurationMinutes = const Value.absent(),
+    this.focusMinutes = const Value.absent(),
   });
   PlanTasksCompanion.insert({
     this.id = const Value.absent(),
@@ -773,6 +820,7 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
     this.sortOrder = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.plannedDurationMinutes = const Value.absent(),
+    this.focusMinutes = const Value.absent(),
   }) : title = Value(title),
        taskDate = Value(taskDate),
        startMinutes = Value(startMinutes),
@@ -797,6 +845,7 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
     Expression<int>? sortOrder,
     Expression<DateTime>? completedAt,
     Expression<int>? plannedDurationMinutes,
+    Expression<int>? focusMinutes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -816,6 +865,7 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
       if (completedAt != null) 'completed_at': completedAt,
       if (plannedDurationMinutes != null)
         'planned_duration_minutes': plannedDurationMinutes,
+      if (focusMinutes != null) 'focus_minutes': focusMinutes,
     });
   }
 
@@ -836,6 +886,7 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
     Value<int>? sortOrder,
     Value<DateTime?>? completedAt,
     Value<int?>? plannedDurationMinutes,
+    Value<int?>? focusMinutes,
   }) {
     return PlanTasksCompanion(
       id: id ?? this.id,
@@ -855,6 +906,7 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
       completedAt: completedAt ?? this.completedAt,
       plannedDurationMinutes:
           plannedDurationMinutes ?? this.plannedDurationMinutes,
+      focusMinutes: focusMinutes ?? this.focusMinutes,
     );
   }
 
@@ -911,6 +963,9 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
         plannedDurationMinutes.value,
       );
     }
+    if (focusMinutes.present) {
+      map['focus_minutes'] = Variable<int>(focusMinutes.value);
+    }
     return map;
   }
 
@@ -932,7 +987,8 @@ class PlanTasksCompanion extends UpdateCompanion<PlanTaskRow> {
           ..write('isAllDay: $isAllDay, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('completedAt: $completedAt, ')
-          ..write('plannedDurationMinutes: $plannedDurationMinutes')
+          ..write('plannedDurationMinutes: $plannedDurationMinutes, ')
+          ..write('focusMinutes: $focusMinutes')
           ..write(')'))
         .toString();
   }
@@ -1024,6 +1080,21 @@ class $ActivityRecordsTable extends ActivityRecords
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _isCompletedMeta = const VerificationMeta(
+    'isCompleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isCompleted = GeneratedColumn<bool>(
+    'is_completed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_completed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1055,6 +1126,7 @@ class $ActivityRecordsTable extends ActivityRecords
     endMinutes,
     durationMinutes,
     note,
+    isCompleted,
     createdAt,
     updatedAt,
   ];
@@ -1121,6 +1193,15 @@ class $ActivityRecordsTable extends ActivityRecords
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('is_completed')) {
+      context.handle(
+        _isCompletedMeta,
+        isCompleted.isAcceptableOrUnknown(
+          data['is_completed']!,
+          _isCompletedMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1179,6 +1260,11 @@ class $ActivityRecordsTable extends ActivityRecords
             DriftSqlType.string,
             data['${effectivePrefix}note'],
           )!,
+      isCompleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_completed'],
+          )!,
       createdAt:
           attachedDatabase.typeMapping.read(
             DriftSqlType.dateTime,
@@ -1207,6 +1293,7 @@ class ActivityRecordRow extends DataClass
   final int? endMinutes;
   final int durationMinutes;
   final String note;
+  final bool isCompleted;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ActivityRecordRow({
@@ -1217,6 +1304,7 @@ class ActivityRecordRow extends DataClass
     this.endMinutes,
     required this.durationMinutes,
     required this.note,
+    required this.isCompleted,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1234,6 +1322,7 @@ class ActivityRecordRow extends DataClass
     }
     map['duration_minutes'] = Variable<int>(durationMinutes);
     map['note'] = Variable<String>(note);
+    map['is_completed'] = Variable<bool>(isCompleted);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1254,6 +1343,7 @@ class ActivityRecordRow extends DataClass
               : Value(endMinutes),
       durationMinutes: Value(durationMinutes),
       note: Value(note),
+      isCompleted: Value(isCompleted),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1272,6 +1362,7 @@ class ActivityRecordRow extends DataClass
       endMinutes: serializer.fromJson<int?>(json['endMinutes']),
       durationMinutes: serializer.fromJson<int>(json['durationMinutes']),
       note: serializer.fromJson<String>(json['note']),
+      isCompleted: serializer.fromJson<bool>(json['isCompleted']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1287,6 +1378,7 @@ class ActivityRecordRow extends DataClass
       'endMinutes': serializer.toJson<int?>(endMinutes),
       'durationMinutes': serializer.toJson<int>(durationMinutes),
       'note': serializer.toJson<String>(note),
+      'isCompleted': serializer.toJson<bool>(isCompleted),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1300,6 +1392,7 @@ class ActivityRecordRow extends DataClass
     Value<int?> endMinutes = const Value.absent(),
     int? durationMinutes,
     String? note,
+    bool? isCompleted,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ActivityRecordRow(
@@ -1310,6 +1403,7 @@ class ActivityRecordRow extends DataClass
     endMinutes: endMinutes.present ? endMinutes.value : this.endMinutes,
     durationMinutes: durationMinutes ?? this.durationMinutes,
     note: note ?? this.note,
+    isCompleted: isCompleted ?? this.isCompleted,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1330,6 +1424,8 @@ class ActivityRecordRow extends DataClass
               ? data.durationMinutes.value
               : this.durationMinutes,
       note: data.note.present ? data.note.value : this.note,
+      isCompleted:
+          data.isCompleted.present ? data.isCompleted.value : this.isCompleted,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1345,6 +1441,7 @@ class ActivityRecordRow extends DataClass
           ..write('endMinutes: $endMinutes, ')
           ..write('durationMinutes: $durationMinutes, ')
           ..write('note: $note, ')
+          ..write('isCompleted: $isCompleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1360,6 +1457,7 @@ class ActivityRecordRow extends DataClass
     endMinutes,
     durationMinutes,
     note,
+    isCompleted,
     createdAt,
     updatedAt,
   );
@@ -1374,6 +1472,7 @@ class ActivityRecordRow extends DataClass
           other.endMinutes == this.endMinutes &&
           other.durationMinutes == this.durationMinutes &&
           other.note == this.note &&
+          other.isCompleted == this.isCompleted &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1386,6 +1485,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
   final Value<int?> endMinutes;
   final Value<int> durationMinutes;
   final Value<String> note;
+  final Value<bool> isCompleted;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const ActivityRecordsCompanion({
@@ -1396,6 +1496,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
     this.endMinutes = const Value.absent(),
     this.durationMinutes = const Value.absent(),
     this.note = const Value.absent(),
+    this.isCompleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -1407,6 +1508,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
     this.endMinutes = const Value.absent(),
     required int durationMinutes,
     this.note = const Value.absent(),
+    this.isCompleted = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : recordDate = Value(recordDate),
@@ -1422,6 +1524,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
     Expression<int>? endMinutes,
     Expression<int>? durationMinutes,
     Expression<String>? note,
+    Expression<bool>? isCompleted,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -1433,6 +1536,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
       if (endMinutes != null) 'end_minutes': endMinutes,
       if (durationMinutes != null) 'duration_minutes': durationMinutes,
       if (note != null) 'note': note,
+      if (isCompleted != null) 'is_completed': isCompleted,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -1446,6 +1550,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
     Value<int?>? endMinutes,
     Value<int>? durationMinutes,
     Value<String>? note,
+    Value<bool>? isCompleted,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -1457,6 +1562,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
       endMinutes: endMinutes ?? this.endMinutes,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       note: note ?? this.note,
+      isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -1486,6 +1592,9 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (isCompleted.present) {
+      map['is_completed'] = Variable<bool>(isCompleted.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1505,6 +1614,7 @@ class ActivityRecordsCompanion extends UpdateCompanion<ActivityRecordRow> {
           ..write('endMinutes: $endMinutes, ')
           ..write('durationMinutes: $durationMinutes, ')
           ..write('note: $note, ')
+          ..write('isCompleted: $isCompleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -3067,6 +3177,27 @@ class $ActiveTimersTable extends ActiveTimers
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _totalSecondsMeta = const VerificationMeta(
+    'totalSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> totalSeconds = GeneratedColumn<int>(
+    'total_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _isRunningMeta = const VerificationMeta(
     'isRunning',
   );
@@ -3132,6 +3263,8 @@ class $ActiveTimersTable extends ActiveTimers
     startedAt,
     expectedEndAt,
     remainingSeconds,
+    totalSeconds,
+    title,
     isRunning,
     cycleCount,
     taskId,
@@ -3198,6 +3331,21 @@ class $ActiveTimersTable extends ActiveTimers
       );
     } else if (isInserting) {
       context.missing(_remainingSecondsMeta);
+    }
+    if (data.containsKey('total_seconds')) {
+      context.handle(
+        _totalSecondsMeta,
+        totalSeconds.isAcceptableOrUnknown(
+          data['total_seconds']!,
+          _totalSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
     }
     if (data.containsKey('is_running')) {
       context.handle(
@@ -3272,6 +3420,15 @@ class $ActiveTimersTable extends ActiveTimers
             DriftSqlType.int,
             data['${effectivePrefix}remaining_seconds'],
           )!,
+      totalSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_seconds'],
+      ),
+      title:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}title'],
+          )!,
       isRunning:
           attachedDatabase.typeMapping.read(
             DriftSqlType.bool,
@@ -3311,6 +3468,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
   final DateTime startedAt;
   final DateTime expectedEndAt;
   final int remainingSeconds;
+  final int? totalSeconds;
+  final String title;
   final bool isRunning;
   final int cycleCount;
   final int? taskId;
@@ -3323,6 +3482,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
     required this.startedAt,
     required this.expectedEndAt,
     required this.remainingSeconds,
+    this.totalSeconds,
+    required this.title,
     required this.isRunning,
     required this.cycleCount,
     this.taskId,
@@ -3338,6 +3499,10 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
     map['started_at'] = Variable<DateTime>(startedAt);
     map['expected_end_at'] = Variable<DateTime>(expectedEndAt);
     map['remaining_seconds'] = Variable<int>(remainingSeconds);
+    if (!nullToAbsent || totalSeconds != null) {
+      map['total_seconds'] = Variable<int>(totalSeconds);
+    }
+    map['title'] = Variable<String>(title);
     map['is_running'] = Variable<bool>(isRunning);
     map['cycle_count'] = Variable<int>(cycleCount);
     if (!nullToAbsent || taskId != null) {
@@ -3358,6 +3523,11 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
       startedAt: Value(startedAt),
       expectedEndAt: Value(expectedEndAt),
       remainingSeconds: Value(remainingSeconds),
+      totalSeconds:
+          totalSeconds == null && nullToAbsent
+              ? const Value.absent()
+              : Value(totalSeconds),
+      title: Value(title),
       isRunning: Value(isRunning),
       cycleCount: Value(cycleCount),
       taskId:
@@ -3382,6 +3552,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
       startedAt: serializer.fromJson<DateTime>(json['startedAt']),
       expectedEndAt: serializer.fromJson<DateTime>(json['expectedEndAt']),
       remainingSeconds: serializer.fromJson<int>(json['remainingSeconds']),
+      totalSeconds: serializer.fromJson<int?>(json['totalSeconds']),
+      title: serializer.fromJson<String>(json['title']),
       isRunning: serializer.fromJson<bool>(json['isRunning']),
       cycleCount: serializer.fromJson<int>(json['cycleCount']),
       taskId: serializer.fromJson<int?>(json['taskId']),
@@ -3399,6 +3571,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
       'startedAt': serializer.toJson<DateTime>(startedAt),
       'expectedEndAt': serializer.toJson<DateTime>(expectedEndAt),
       'remainingSeconds': serializer.toJson<int>(remainingSeconds),
+      'totalSeconds': serializer.toJson<int?>(totalSeconds),
+      'title': serializer.toJson<String>(title),
       'isRunning': serializer.toJson<bool>(isRunning),
       'cycleCount': serializer.toJson<int>(cycleCount),
       'taskId': serializer.toJson<int?>(taskId),
@@ -3414,6 +3588,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
     DateTime? startedAt,
     DateTime? expectedEndAt,
     int? remainingSeconds,
+    Value<int?> totalSeconds = const Value.absent(),
+    String? title,
     bool? isRunning,
     int? cycleCount,
     Value<int?> taskId = const Value.absent(),
@@ -3426,6 +3602,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
     startedAt: startedAt ?? this.startedAt,
     expectedEndAt: expectedEndAt ?? this.expectedEndAt,
     remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+    totalSeconds: totalSeconds.present ? totalSeconds.value : this.totalSeconds,
+    title: title ?? this.title,
     isRunning: isRunning ?? this.isRunning,
     cycleCount: cycleCount ?? this.cycleCount,
     taskId: taskId.present ? taskId.value : this.taskId,
@@ -3446,6 +3624,11 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
           data.remainingSeconds.present
               ? data.remainingSeconds.value
               : this.remainingSeconds,
+      totalSeconds:
+          data.totalSeconds.present
+              ? data.totalSeconds.value
+              : this.totalSeconds,
+      title: data.title.present ? data.title.value : this.title,
       isRunning: data.isRunning.present ? data.isRunning.value : this.isRunning,
       cycleCount:
           data.cycleCount.present ? data.cycleCount.value : this.cycleCount,
@@ -3465,6 +3648,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
           ..write('startedAt: $startedAt, ')
           ..write('expectedEndAt: $expectedEndAt, ')
           ..write('remainingSeconds: $remainingSeconds, ')
+          ..write('totalSeconds: $totalSeconds, ')
+          ..write('title: $title, ')
           ..write('isRunning: $isRunning, ')
           ..write('cycleCount: $cycleCount, ')
           ..write('taskId: $taskId, ')
@@ -3482,6 +3667,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
     startedAt,
     expectedEndAt,
     remainingSeconds,
+    totalSeconds,
+    title,
     isRunning,
     cycleCount,
     taskId,
@@ -3498,6 +3685,8 @@ class ActiveTimerRow extends DataClass implements Insertable<ActiveTimerRow> {
           other.startedAt == this.startedAt &&
           other.expectedEndAt == this.expectedEndAt &&
           other.remainingSeconds == this.remainingSeconds &&
+          other.totalSeconds == this.totalSeconds &&
+          other.title == this.title &&
           other.isRunning == this.isRunning &&
           other.cycleCount == this.cycleCount &&
           other.taskId == this.taskId &&
@@ -3512,6 +3701,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
   final Value<DateTime> startedAt;
   final Value<DateTime> expectedEndAt;
   final Value<int> remainingSeconds;
+  final Value<int?> totalSeconds;
+  final Value<String> title;
   final Value<bool> isRunning;
   final Value<int> cycleCount;
   final Value<int?> taskId;
@@ -3524,6 +3715,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
     this.startedAt = const Value.absent(),
     this.expectedEndAt = const Value.absent(),
     this.remainingSeconds = const Value.absent(),
+    this.totalSeconds = const Value.absent(),
+    this.title = const Value.absent(),
     this.isRunning = const Value.absent(),
     this.cycleCount = const Value.absent(),
     this.taskId = const Value.absent(),
@@ -3537,6 +3730,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
     required DateTime startedAt,
     required DateTime expectedEndAt,
     required int remainingSeconds,
+    this.totalSeconds = const Value.absent(),
+    this.title = const Value.absent(),
     required bool isRunning,
     this.cycleCount = const Value.absent(),
     this.taskId = const Value.absent(),
@@ -3556,6 +3751,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
     Expression<DateTime>? startedAt,
     Expression<DateTime>? expectedEndAt,
     Expression<int>? remainingSeconds,
+    Expression<int>? totalSeconds,
+    Expression<String>? title,
     Expression<bool>? isRunning,
     Expression<int>? cycleCount,
     Expression<int>? taskId,
@@ -3569,6 +3766,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
       if (startedAt != null) 'started_at': startedAt,
       if (expectedEndAt != null) 'expected_end_at': expectedEndAt,
       if (remainingSeconds != null) 'remaining_seconds': remainingSeconds,
+      if (totalSeconds != null) 'total_seconds': totalSeconds,
+      if (title != null) 'title': title,
       if (isRunning != null) 'is_running': isRunning,
       if (cycleCount != null) 'cycle_count': cycleCount,
       if (taskId != null) 'task_id': taskId,
@@ -3584,6 +3783,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
     Value<DateTime>? startedAt,
     Value<DateTime>? expectedEndAt,
     Value<int>? remainingSeconds,
+    Value<int?>? totalSeconds,
+    Value<String>? title,
     Value<bool>? isRunning,
     Value<int>? cycleCount,
     Value<int?>? taskId,
@@ -3597,6 +3798,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
       startedAt: startedAt ?? this.startedAt,
       expectedEndAt: expectedEndAt ?? this.expectedEndAt,
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+      totalSeconds: totalSeconds ?? this.totalSeconds,
+      title: title ?? this.title,
       isRunning: isRunning ?? this.isRunning,
       cycleCount: cycleCount ?? this.cycleCount,
       taskId: taskId ?? this.taskId,
@@ -3626,6 +3829,12 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
     if (remainingSeconds.present) {
       map['remaining_seconds'] = Variable<int>(remainingSeconds.value);
     }
+    if (totalSeconds.present) {
+      map['total_seconds'] = Variable<int>(totalSeconds.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
     if (isRunning.present) {
       map['is_running'] = Variable<bool>(isRunning.value);
     }
@@ -3653,6 +3862,8 @@ class ActiveTimersCompanion extends UpdateCompanion<ActiveTimerRow> {
           ..write('startedAt: $startedAt, ')
           ..write('expectedEndAt: $expectedEndAt, ')
           ..write('remainingSeconds: $remainingSeconds, ')
+          ..write('totalSeconds: $totalSeconds, ')
+          ..write('title: $title, ')
           ..write('isRunning: $isRunning, ')
           ..write('cycleCount: $cycleCount, ')
           ..write('taskId: $taskId, ')
@@ -4218,6 +4429,97 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _autoCompleteTaskOnFocusMeta =
+      const VerificationMeta('autoCompleteTaskOnFocus');
+  @override
+  late final GeneratedColumn<bool> autoCompleteTaskOnFocus =
+      GeneratedColumn<bool>(
+        'auto_complete_task_on_focus',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("auto_complete_task_on_focus" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _focusMusicEnabledMeta = const VerificationMeta(
+    'focusMusicEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> focusMusicEnabled = GeneratedColumn<bool>(
+    'focus_music_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("focus_music_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _focusMusicUriMeta = const VerificationMeta(
+    'focusMusicUri',
+  );
+  @override
+  late final GeneratedColumn<String> focusMusicUri = GeneratedColumn<String>(
+    'focus_music_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _focusMusicNameMeta = const VerificationMeta(
+    'focusMusicName',
+  );
+  @override
+  late final GeneratedColumn<String> focusMusicName = GeneratedColumn<String>(
+    'focus_music_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _timelineStartMinutesMeta =
+      const VerificationMeta('timelineStartMinutes');
+  @override
+  late final GeneratedColumn<int> timelineStartMinutes = GeneratedColumn<int>(
+    'timeline_start_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _timelineEndMinutesMeta =
+      const VerificationMeta('timelineEndMinutes');
+  @override
+  late final GeneratedColumn<int> timelineEndMinutes = GeneratedColumn<int>(
+    'timeline_end_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1440),
+  );
+  static const VerificationMeta _autoColorEnabledMeta = const VerificationMeta(
+    'autoColorEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> autoColorEnabled = GeneratedColumn<bool>(
+    'auto_color_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_color_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -4242,6 +4544,13 @@ class $AppSettingsTableTable extends AppSettingsTable
     longBreakMinutes,
     longBreakInterval,
     notificationEnabled,
+    autoCompleteTaskOnFocus,
+    focusMusicEnabled,
+    focusMusicUri,
+    focusMusicName,
+    timelineStartMinutes,
+    timelineEndMinutes,
+    autoColorEnabled,
     updatedAt,
   ];
   @override
@@ -4346,6 +4655,69 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('auto_complete_task_on_focus')) {
+      context.handle(
+        _autoCompleteTaskOnFocusMeta,
+        autoCompleteTaskOnFocus.isAcceptableOrUnknown(
+          data['auto_complete_task_on_focus']!,
+          _autoCompleteTaskOnFocusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focus_music_enabled')) {
+      context.handle(
+        _focusMusicEnabledMeta,
+        focusMusicEnabled.isAcceptableOrUnknown(
+          data['focus_music_enabled']!,
+          _focusMusicEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focus_music_uri')) {
+      context.handle(
+        _focusMusicUriMeta,
+        focusMusicUri.isAcceptableOrUnknown(
+          data['focus_music_uri']!,
+          _focusMusicUriMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focus_music_name')) {
+      context.handle(
+        _focusMusicNameMeta,
+        focusMusicName.isAcceptableOrUnknown(
+          data['focus_music_name']!,
+          _focusMusicNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('timeline_start_minutes')) {
+      context.handle(
+        _timelineStartMinutesMeta,
+        timelineStartMinutes.isAcceptableOrUnknown(
+          data['timeline_start_minutes']!,
+          _timelineStartMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('timeline_end_minutes')) {
+      context.handle(
+        _timelineEndMinutesMeta,
+        timelineEndMinutes.isAcceptableOrUnknown(
+          data['timeline_end_minutes']!,
+          _timelineEndMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('auto_color_enabled')) {
+      context.handle(
+        _autoColorEnabledMeta,
+        autoColorEnabled.isAcceptableOrUnknown(
+          data['auto_color_enabled']!,
+          _autoColorEnabledMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -4418,6 +4790,41 @@ class $AppSettingsTableTable extends AppSettingsTable
             DriftSqlType.bool,
             data['${effectivePrefix}notification_enabled'],
           )!,
+      autoCompleteTaskOnFocus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}auto_complete_task_on_focus'],
+          )!,
+      focusMusicEnabled:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}focus_music_enabled'],
+          )!,
+      focusMusicUri:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}focus_music_uri'],
+          )!,
+      focusMusicName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}focus_music_name'],
+          )!,
+      timelineStartMinutes:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}timeline_start_minutes'],
+          )!,
+      timelineEndMinutes:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}timeline_end_minutes'],
+          )!,
+      autoColorEnabled:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}auto_color_enabled'],
+          )!,
       updatedAt:
           attachedDatabase.typeMapping.read(
             DriftSqlType.dateTime,
@@ -4444,6 +4851,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final int longBreakMinutes;
   final int longBreakInterval;
   final bool notificationEnabled;
+  final bool autoCompleteTaskOnFocus;
+  final bool focusMusicEnabled;
+  final String focusMusicUri;
+  final String focusMusicName;
+  final int timelineStartMinutes;
+  final int timelineEndMinutes;
+  final bool autoColorEnabled;
   final DateTime updatedAt;
   const AppSettingsRow({
     required this.id,
@@ -4457,6 +4871,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.longBreakMinutes,
     required this.longBreakInterval,
     required this.notificationEnabled,
+    required this.autoCompleteTaskOnFocus,
+    required this.focusMusicEnabled,
+    required this.focusMusicUri,
+    required this.focusMusicName,
+    required this.timelineStartMinutes,
+    required this.timelineEndMinutes,
+    required this.autoColorEnabled,
     required this.updatedAt,
   });
   @override
@@ -4473,6 +4894,15 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['long_break_minutes'] = Variable<int>(longBreakMinutes);
     map['long_break_interval'] = Variable<int>(longBreakInterval);
     map['notification_enabled'] = Variable<bool>(notificationEnabled);
+    map['auto_complete_task_on_focus'] = Variable<bool>(
+      autoCompleteTaskOnFocus,
+    );
+    map['focus_music_enabled'] = Variable<bool>(focusMusicEnabled);
+    map['focus_music_uri'] = Variable<String>(focusMusicUri);
+    map['focus_music_name'] = Variable<String>(focusMusicName);
+    map['timeline_start_minutes'] = Variable<int>(timelineStartMinutes);
+    map['timeline_end_minutes'] = Variable<int>(timelineEndMinutes);
+    map['auto_color_enabled'] = Variable<bool>(autoColorEnabled);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -4490,6 +4920,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       longBreakMinutes: Value(longBreakMinutes),
       longBreakInterval: Value(longBreakInterval),
       notificationEnabled: Value(notificationEnabled),
+      autoCompleteTaskOnFocus: Value(autoCompleteTaskOnFocus),
+      focusMusicEnabled: Value(focusMusicEnabled),
+      focusMusicUri: Value(focusMusicUri),
+      focusMusicName: Value(focusMusicName),
+      timelineStartMinutes: Value(timelineStartMinutes),
+      timelineEndMinutes: Value(timelineEndMinutes),
+      autoColorEnabled: Value(autoColorEnabled),
       updatedAt: Value(updatedAt),
     );
   }
@@ -4517,6 +4954,17 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       notificationEnabled: serializer.fromJson<bool>(
         json['notificationEnabled'],
       ),
+      autoCompleteTaskOnFocus: serializer.fromJson<bool>(
+        json['autoCompleteTaskOnFocus'],
+      ),
+      focusMusicEnabled: serializer.fromJson<bool>(json['focusMusicEnabled']),
+      focusMusicUri: serializer.fromJson<String>(json['focusMusicUri']),
+      focusMusicName: serializer.fromJson<String>(json['focusMusicName']),
+      timelineStartMinutes: serializer.fromJson<int>(
+        json['timelineStartMinutes'],
+      ),
+      timelineEndMinutes: serializer.fromJson<int>(json['timelineEndMinutes']),
+      autoColorEnabled: serializer.fromJson<bool>(json['autoColorEnabled']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -4535,6 +4983,15 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'longBreakMinutes': serializer.toJson<int>(longBreakMinutes),
       'longBreakInterval': serializer.toJson<int>(longBreakInterval),
       'notificationEnabled': serializer.toJson<bool>(notificationEnabled),
+      'autoCompleteTaskOnFocus': serializer.toJson<bool>(
+        autoCompleteTaskOnFocus,
+      ),
+      'focusMusicEnabled': serializer.toJson<bool>(focusMusicEnabled),
+      'focusMusicUri': serializer.toJson<String>(focusMusicUri),
+      'focusMusicName': serializer.toJson<String>(focusMusicName),
+      'timelineStartMinutes': serializer.toJson<int>(timelineStartMinutes),
+      'timelineEndMinutes': serializer.toJson<int>(timelineEndMinutes),
+      'autoColorEnabled': serializer.toJson<bool>(autoColorEnabled),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -4551,6 +5008,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     int? longBreakMinutes,
     int? longBreakInterval,
     bool? notificationEnabled,
+    bool? autoCompleteTaskOnFocus,
+    bool? focusMusicEnabled,
+    String? focusMusicUri,
+    String? focusMusicName,
+    int? timelineStartMinutes,
+    int? timelineEndMinutes,
+    bool? autoColorEnabled,
     DateTime? updatedAt,
   }) => AppSettingsRow(
     id: id ?? this.id,
@@ -4564,6 +5028,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
     longBreakInterval: longBreakInterval ?? this.longBreakInterval,
     notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+    autoCompleteTaskOnFocus:
+        autoCompleteTaskOnFocus ?? this.autoCompleteTaskOnFocus,
+    focusMusicEnabled: focusMusicEnabled ?? this.focusMusicEnabled,
+    focusMusicUri: focusMusicUri ?? this.focusMusicUri,
+    focusMusicName: focusMusicName ?? this.focusMusicName,
+    timelineStartMinutes: timelineStartMinutes ?? this.timelineStartMinutes,
+    timelineEndMinutes: timelineEndMinutes ?? this.timelineEndMinutes,
+    autoColorEnabled: autoColorEnabled ?? this.autoColorEnabled,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsRow copyWithCompanion(AppSettingsTableCompanion data) {
@@ -4606,6 +5078,34 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           data.notificationEnabled.present
               ? data.notificationEnabled.value
               : this.notificationEnabled,
+      autoCompleteTaskOnFocus:
+          data.autoCompleteTaskOnFocus.present
+              ? data.autoCompleteTaskOnFocus.value
+              : this.autoCompleteTaskOnFocus,
+      focusMusicEnabled:
+          data.focusMusicEnabled.present
+              ? data.focusMusicEnabled.value
+              : this.focusMusicEnabled,
+      focusMusicUri:
+          data.focusMusicUri.present
+              ? data.focusMusicUri.value
+              : this.focusMusicUri,
+      focusMusicName:
+          data.focusMusicName.present
+              ? data.focusMusicName.value
+              : this.focusMusicName,
+      timelineStartMinutes:
+          data.timelineStartMinutes.present
+              ? data.timelineStartMinutes.value
+              : this.timelineStartMinutes,
+      timelineEndMinutes:
+          data.timelineEndMinutes.present
+              ? data.timelineEndMinutes.value
+              : this.timelineEndMinutes,
+      autoColorEnabled:
+          data.autoColorEnabled.present
+              ? data.autoColorEnabled.value
+              : this.autoColorEnabled,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -4624,6 +5124,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('longBreakMinutes: $longBreakMinutes, ')
           ..write('longBreakInterval: $longBreakInterval, ')
           ..write('notificationEnabled: $notificationEnabled, ')
+          ..write('autoCompleteTaskOnFocus: $autoCompleteTaskOnFocus, ')
+          ..write('focusMusicEnabled: $focusMusicEnabled, ')
+          ..write('focusMusicUri: $focusMusicUri, ')
+          ..write('focusMusicName: $focusMusicName, ')
+          ..write('timelineStartMinutes: $timelineStartMinutes, ')
+          ..write('timelineEndMinutes: $timelineEndMinutes, ')
+          ..write('autoColorEnabled: $autoColorEnabled, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -4642,6 +5149,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     longBreakMinutes,
     longBreakInterval,
     notificationEnabled,
+    autoCompleteTaskOnFocus,
+    focusMusicEnabled,
+    focusMusicUri,
+    focusMusicName,
+    timelineStartMinutes,
+    timelineEndMinutes,
+    autoColorEnabled,
     updatedAt,
   );
   @override
@@ -4659,6 +5173,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.longBreakMinutes == this.longBreakMinutes &&
           other.longBreakInterval == this.longBreakInterval &&
           other.notificationEnabled == this.notificationEnabled &&
+          other.autoCompleteTaskOnFocus == this.autoCompleteTaskOnFocus &&
+          other.focusMusicEnabled == this.focusMusicEnabled &&
+          other.focusMusicUri == this.focusMusicUri &&
+          other.focusMusicName == this.focusMusicName &&
+          other.timelineStartMinutes == this.timelineStartMinutes &&
+          other.timelineEndMinutes == this.timelineEndMinutes &&
+          other.autoColorEnabled == this.autoColorEnabled &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -4674,6 +5195,13 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> longBreakMinutes;
   final Value<int> longBreakInterval;
   final Value<bool> notificationEnabled;
+  final Value<bool> autoCompleteTaskOnFocus;
+  final Value<bool> focusMusicEnabled;
+  final Value<String> focusMusicUri;
+  final Value<String> focusMusicName;
+  final Value<int> timelineStartMinutes;
+  final Value<int> timelineEndMinutes;
+  final Value<bool> autoColorEnabled;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -4687,6 +5215,13 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.longBreakMinutes = const Value.absent(),
     this.longBreakInterval = const Value.absent(),
     this.notificationEnabled = const Value.absent(),
+    this.autoCompleteTaskOnFocus = const Value.absent(),
+    this.focusMusicEnabled = const Value.absent(),
+    this.focusMusicUri = const Value.absent(),
+    this.focusMusicName = const Value.absent(),
+    this.timelineStartMinutes = const Value.absent(),
+    this.timelineEndMinutes = const Value.absent(),
+    this.autoColorEnabled = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -4701,6 +5236,13 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.longBreakMinutes = const Value.absent(),
     this.longBreakInterval = const Value.absent(),
     this.notificationEnabled = const Value.absent(),
+    this.autoCompleteTaskOnFocus = const Value.absent(),
+    this.focusMusicEnabled = const Value.absent(),
+    this.focusMusicUri = const Value.absent(),
+    this.focusMusicName = const Value.absent(),
+    this.timelineStartMinutes = const Value.absent(),
+    this.timelineEndMinutes = const Value.absent(),
+    this.autoColorEnabled = const Value.absent(),
     required DateTime updatedAt,
   }) : updatedAt = Value(updatedAt);
   static Insertable<AppSettingsRow> custom({
@@ -4715,6 +5257,13 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? longBreakMinutes,
     Expression<int>? longBreakInterval,
     Expression<bool>? notificationEnabled,
+    Expression<bool>? autoCompleteTaskOnFocus,
+    Expression<bool>? focusMusicEnabled,
+    Expression<String>? focusMusicUri,
+    Expression<String>? focusMusicName,
+    Expression<int>? timelineStartMinutes,
+    Expression<int>? timelineEndMinutes,
+    Expression<bool>? autoColorEnabled,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -4732,6 +5281,16 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (longBreakInterval != null) 'long_break_interval': longBreakInterval,
       if (notificationEnabled != null)
         'notification_enabled': notificationEnabled,
+      if (autoCompleteTaskOnFocus != null)
+        'auto_complete_task_on_focus': autoCompleteTaskOnFocus,
+      if (focusMusicEnabled != null) 'focus_music_enabled': focusMusicEnabled,
+      if (focusMusicUri != null) 'focus_music_uri': focusMusicUri,
+      if (focusMusicName != null) 'focus_music_name': focusMusicName,
+      if (timelineStartMinutes != null)
+        'timeline_start_minutes': timelineStartMinutes,
+      if (timelineEndMinutes != null)
+        'timeline_end_minutes': timelineEndMinutes,
+      if (autoColorEnabled != null) 'auto_color_enabled': autoColorEnabled,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -4748,6 +5307,13 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? longBreakMinutes,
     Value<int>? longBreakInterval,
     Value<bool>? notificationEnabled,
+    Value<bool>? autoCompleteTaskOnFocus,
+    Value<bool>? focusMusicEnabled,
+    Value<String>? focusMusicUri,
+    Value<String>? focusMusicName,
+    Value<int>? timelineStartMinutes,
+    Value<int>? timelineEndMinutes,
+    Value<bool>? autoColorEnabled,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -4762,6 +5328,14 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
       longBreakInterval: longBreakInterval ?? this.longBreakInterval,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      autoCompleteTaskOnFocus:
+          autoCompleteTaskOnFocus ?? this.autoCompleteTaskOnFocus,
+      focusMusicEnabled: focusMusicEnabled ?? this.focusMusicEnabled,
+      focusMusicUri: focusMusicUri ?? this.focusMusicUri,
+      focusMusicName: focusMusicName ?? this.focusMusicName,
+      timelineStartMinutes: timelineStartMinutes ?? this.timelineStartMinutes,
+      timelineEndMinutes: timelineEndMinutes ?? this.timelineEndMinutes,
+      autoColorEnabled: autoColorEnabled ?? this.autoColorEnabled,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -4802,6 +5376,29 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (notificationEnabled.present) {
       map['notification_enabled'] = Variable<bool>(notificationEnabled.value);
     }
+    if (autoCompleteTaskOnFocus.present) {
+      map['auto_complete_task_on_focus'] = Variable<bool>(
+        autoCompleteTaskOnFocus.value,
+      );
+    }
+    if (focusMusicEnabled.present) {
+      map['focus_music_enabled'] = Variable<bool>(focusMusicEnabled.value);
+    }
+    if (focusMusicUri.present) {
+      map['focus_music_uri'] = Variable<String>(focusMusicUri.value);
+    }
+    if (focusMusicName.present) {
+      map['focus_music_name'] = Variable<String>(focusMusicName.value);
+    }
+    if (timelineStartMinutes.present) {
+      map['timeline_start_minutes'] = Variable<int>(timelineStartMinutes.value);
+    }
+    if (timelineEndMinutes.present) {
+      map['timeline_end_minutes'] = Variable<int>(timelineEndMinutes.value);
+    }
+    if (autoColorEnabled.present) {
+      map['auto_color_enabled'] = Variable<bool>(autoColorEnabled.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -4822,7 +5419,315 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('longBreakMinutes: $longBreakMinutes, ')
           ..write('longBreakInterval: $longBreakInterval, ')
           ..write('notificationEnabled: $notificationEnabled, ')
+          ..write('autoCompleteTaskOnFocus: $autoCompleteTaskOnFocus, ')
+          ..write('focusMusicEnabled: $focusMusicEnabled, ')
+          ..write('focusMusicUri: $focusMusicUri, ')
+          ..write('focusMusicName: $focusMusicName, ')
+          ..write('timelineStartMinutes: $timelineStartMinutes, ')
+          ..write('timelineEndMinutes: $timelineEndMinutes, ')
+          ..write('autoColorEnabled: $autoColorEnabled, ')
           ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FocusPresetsTable extends FocusPresets
+    with TableInfo<$FocusPresetsTable, FocusPresetRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FocusPresetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minutesMeta = const VerificationMeta(
+    'minutes',
+  );
+  @override
+  late final GeneratedColumn<int> minutes = GeneratedColumn<int>(
+    'minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(25),
+  );
+  static const VerificationMeta _colorValueMeta = const VerificationMeta(
+    'colorValue',
+  );
+  @override
+  late final GeneratedColumn<int> colorValue = GeneratedColumn<int>(
+    'color_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, title, minutes, colorValue];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'focus_presets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FocusPresetRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('minutes')) {
+      context.handle(
+        _minutesMeta,
+        minutes.isAcceptableOrUnknown(data['minutes']!, _minutesMeta),
+      );
+    }
+    if (data.containsKey('color_value')) {
+      context.handle(
+        _colorValueMeta,
+        colorValue.isAcceptableOrUnknown(data['color_value']!, _colorValueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorValueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FocusPresetRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FocusPresetRow(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
+      title:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}title'],
+          )!,
+      minutes:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}minutes'],
+          )!,
+      colorValue:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}color_value'],
+          )!,
+    );
+  }
+
+  @override
+  $FocusPresetsTable createAlias(String alias) {
+    return $FocusPresetsTable(attachedDatabase, alias);
+  }
+}
+
+class FocusPresetRow extends DataClass implements Insertable<FocusPresetRow> {
+  final int id;
+  final String title;
+  final int minutes;
+  final int colorValue;
+  const FocusPresetRow({
+    required this.id,
+    required this.title,
+    required this.minutes,
+    required this.colorValue,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['title'] = Variable<String>(title);
+    map['minutes'] = Variable<int>(minutes);
+    map['color_value'] = Variable<int>(colorValue);
+    return map;
+  }
+
+  FocusPresetsCompanion toCompanion(bool nullToAbsent) {
+    return FocusPresetsCompanion(
+      id: Value(id),
+      title: Value(title),
+      minutes: Value(minutes),
+      colorValue: Value(colorValue),
+    );
+  }
+
+  factory FocusPresetRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FocusPresetRow(
+      id: serializer.fromJson<int>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      minutes: serializer.fromJson<int>(json['minutes']),
+      colorValue: serializer.fromJson<int>(json['colorValue']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'title': serializer.toJson<String>(title),
+      'minutes': serializer.toJson<int>(minutes),
+      'colorValue': serializer.toJson<int>(colorValue),
+    };
+  }
+
+  FocusPresetRow copyWith({
+    int? id,
+    String? title,
+    int? minutes,
+    int? colorValue,
+  }) => FocusPresetRow(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    minutes: minutes ?? this.minutes,
+    colorValue: colorValue ?? this.colorValue,
+  );
+  FocusPresetRow copyWithCompanion(FocusPresetsCompanion data) {
+    return FocusPresetRow(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      minutes: data.minutes.present ? data.minutes.value : this.minutes,
+      colorValue:
+          data.colorValue.present ? data.colorValue.value : this.colorValue,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FocusPresetRow(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('minutes: $minutes, ')
+          ..write('colorValue: $colorValue')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, title, minutes, colorValue);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FocusPresetRow &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.minutes == this.minutes &&
+          other.colorValue == this.colorValue);
+}
+
+class FocusPresetsCompanion extends UpdateCompanion<FocusPresetRow> {
+  final Value<int> id;
+  final Value<String> title;
+  final Value<int> minutes;
+  final Value<int> colorValue;
+  const FocusPresetsCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.minutes = const Value.absent(),
+    this.colorValue = const Value.absent(),
+  });
+  FocusPresetsCompanion.insert({
+    this.id = const Value.absent(),
+    required String title,
+    this.minutes = const Value.absent(),
+    required int colorValue,
+  }) : title = Value(title),
+       colorValue = Value(colorValue);
+  static Insertable<FocusPresetRow> custom({
+    Expression<int>? id,
+    Expression<String>? title,
+    Expression<int>? minutes,
+    Expression<int>? colorValue,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (minutes != null) 'minutes': minutes,
+      if (colorValue != null) 'color_value': colorValue,
+    });
+  }
+
+  FocusPresetsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? title,
+    Value<int>? minutes,
+    Value<int>? colorValue,
+  }) {
+    return FocusPresetsCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      minutes: minutes ?? this.minutes,
+      colorValue: colorValue ?? this.colorValue,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (minutes.present) {
+      map['minutes'] = Variable<int>(minutes.value);
+    }
+    if (colorValue.present) {
+      map['color_value'] = Variable<int>(colorValue.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FocusPresetsCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('minutes: $minutes, ')
+          ..write('colorValue: $colorValue')
           ..write(')'))
         .toString();
   }
@@ -4843,6 +5748,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AppSettingsTableTable appSettingsTable = $AppSettingsTableTable(
     this,
   );
+  late final $FocusPresetsTable focusPresets = $FocusPresetsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4856,6 +5762,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     activeTimers,
     monthlyGoals,
     appSettingsTable,
+    focusPresets,
   ];
 }
 
@@ -4877,6 +5784,7 @@ typedef $$PlanTasksTableCreateCompanionBuilder =
       Value<int> sortOrder,
       Value<DateTime?> completedAt,
       Value<int?> plannedDurationMinutes,
+      Value<int?> focusMinutes,
     });
 typedef $$PlanTasksTableUpdateCompanionBuilder =
     PlanTasksCompanion Function({
@@ -4896,6 +5804,7 @@ typedef $$PlanTasksTableUpdateCompanionBuilder =
       Value<int> sortOrder,
       Value<DateTime?> completedAt,
       Value<int?> plannedDurationMinutes,
+      Value<int?> focusMinutes,
     });
 
 class $$PlanTasksTableFilterComposer
@@ -4984,6 +5893,11 @@ class $$PlanTasksTableFilterComposer
 
   ColumnFilters<int> get plannedDurationMinutes => $composableBuilder(
     column: $table.plannedDurationMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get focusMinutes => $composableBuilder(
+    column: $table.focusMinutes,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5076,6 +5990,11 @@ class $$PlanTasksTableOrderingComposer
     column: $table.plannedDurationMinutes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get focusMinutes => $composableBuilder(
+    column: $table.focusMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlanTasksTableAnnotationComposer
@@ -5148,6 +6067,11 @@ class $$PlanTasksTableAnnotationComposer
     column: $table.plannedDurationMinutes,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get focusMinutes => $composableBuilder(
+    column: $table.focusMinutes,
+    builder: (column) => column,
+  );
 }
 
 class $$PlanTasksTableTableManager
@@ -5197,6 +6121,7 @@ class $$PlanTasksTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int?> plannedDurationMinutes = const Value.absent(),
+                Value<int?> focusMinutes = const Value.absent(),
               }) => PlanTasksCompanion(
                 id: id,
                 title: title,
@@ -5214,6 +6139,7 @@ class $$PlanTasksTableTableManager
                 sortOrder: sortOrder,
                 completedAt: completedAt,
                 plannedDurationMinutes: plannedDurationMinutes,
+                focusMinutes: focusMinutes,
               ),
           createCompanionCallback:
               ({
@@ -5233,6 +6159,7 @@ class $$PlanTasksTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int?> plannedDurationMinutes = const Value.absent(),
+                Value<int?> focusMinutes = const Value.absent(),
               }) => PlanTasksCompanion.insert(
                 id: id,
                 title: title,
@@ -5250,6 +6177,7 @@ class $$PlanTasksTableTableManager
                 sortOrder: sortOrder,
                 completedAt: completedAt,
                 plannedDurationMinutes: plannedDurationMinutes,
+                focusMinutes: focusMinutes,
               ),
           withReferenceMapper:
               (p0) =>
@@ -5292,6 +6220,7 @@ typedef $$ActivityRecordsTableCreateCompanionBuilder =
       Value<int?> endMinutes,
       required int durationMinutes,
       Value<String> note,
+      Value<bool> isCompleted,
       required DateTime createdAt,
       required DateTime updatedAt,
     });
@@ -5304,6 +6233,7 @@ typedef $$ActivityRecordsTableUpdateCompanionBuilder =
       Value<int?> endMinutes,
       Value<int> durationMinutes,
       Value<String> note,
+      Value<bool> isCompleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -5349,6 +6279,11 @@ class $$ActivityRecordsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5407,6 +6342,11 @@ class $$ActivityRecordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5455,6 +6395,11 @@ class $$ActivityRecordsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5514,6 +6459,7 @@ class $$ActivityRecordsTableTableManager
                 Value<int?> endMinutes = const Value.absent(),
                 Value<int> durationMinutes = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<bool> isCompleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => ActivityRecordsCompanion(
@@ -5524,6 +6470,7 @@ class $$ActivityRecordsTableTableManager
                 endMinutes: endMinutes,
                 durationMinutes: durationMinutes,
                 note: note,
+                isCompleted: isCompleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -5536,6 +6483,7 @@ class $$ActivityRecordsTableTableManager
                 Value<int?> endMinutes = const Value.absent(),
                 required int durationMinutes,
                 Value<String> note = const Value.absent(),
+                Value<bool> isCompleted = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
               }) => ActivityRecordsCompanion.insert(
@@ -5546,6 +6494,7 @@ class $$ActivityRecordsTableTableManager
                 endMinutes: endMinutes,
                 durationMinutes: durationMinutes,
                 note: note,
+                isCompleted: isCompleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -6380,6 +7329,8 @@ typedef $$ActiveTimersTableCreateCompanionBuilder =
       required DateTime startedAt,
       required DateTime expectedEndAt,
       required int remainingSeconds,
+      Value<int?> totalSeconds,
+      Value<String> title,
       required bool isRunning,
       Value<int> cycleCount,
       Value<int?> taskId,
@@ -6394,6 +7345,8 @@ typedef $$ActiveTimersTableUpdateCompanionBuilder =
       Value<DateTime> startedAt,
       Value<DateTime> expectedEndAt,
       Value<int> remainingSeconds,
+      Value<int?> totalSeconds,
+      Value<String> title,
       Value<bool> isRunning,
       Value<int> cycleCount,
       Value<int?> taskId,
@@ -6437,6 +7390,16 @@ class $$ActiveTimersTableFilterComposer
 
   ColumnFilters<int> get remainingSeconds => $composableBuilder(
     column: $table.remainingSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalSeconds => $composableBuilder(
+    column: $table.totalSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6505,6 +7468,16 @@ class $$ActiveTimersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get totalSeconds => $composableBuilder(
+    column: $table.totalSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isRunning => $composableBuilder(
     column: $table.isRunning,
     builder: (column) => ColumnOrderings(column),
@@ -6561,6 +7534,14 @@ class $$ActiveTimersTableAnnotationComposer
     column: $table.remainingSeconds,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get totalSeconds => $composableBuilder(
+    column: $table.totalSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
 
   GeneratedColumn<bool> get isRunning =>
       $composableBuilder(column: $table.isRunning, builder: (column) => column);
@@ -6620,6 +7601,8 @@ class $$ActiveTimersTableTableManager
                 Value<DateTime> startedAt = const Value.absent(),
                 Value<DateTime> expectedEndAt = const Value.absent(),
                 Value<int> remainingSeconds = const Value.absent(),
+                Value<int?> totalSeconds = const Value.absent(),
+                Value<String> title = const Value.absent(),
                 Value<bool> isRunning = const Value.absent(),
                 Value<int> cycleCount = const Value.absent(),
                 Value<int?> taskId = const Value.absent(),
@@ -6632,6 +7615,8 @@ class $$ActiveTimersTableTableManager
                 startedAt: startedAt,
                 expectedEndAt: expectedEndAt,
                 remainingSeconds: remainingSeconds,
+                totalSeconds: totalSeconds,
+                title: title,
                 isRunning: isRunning,
                 cycleCount: cycleCount,
                 taskId: taskId,
@@ -6646,6 +7631,8 @@ class $$ActiveTimersTableTableManager
                 required DateTime startedAt,
                 required DateTime expectedEndAt,
                 required int remainingSeconds,
+                Value<int?> totalSeconds = const Value.absent(),
+                Value<String> title = const Value.absent(),
                 required bool isRunning,
                 Value<int> cycleCount = const Value.absent(),
                 Value<int?> taskId = const Value.absent(),
@@ -6658,6 +7645,8 @@ class $$ActiveTimersTableTableManager
                 startedAt: startedAt,
                 expectedEndAt: expectedEndAt,
                 remainingSeconds: remainingSeconds,
+                totalSeconds: totalSeconds,
+                title: title,
                 isRunning: isRunning,
                 cycleCount: cycleCount,
                 taskId: taskId,
@@ -6932,6 +7921,13 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int> longBreakMinutes,
       Value<int> longBreakInterval,
       Value<bool> notificationEnabled,
+      Value<bool> autoCompleteTaskOnFocus,
+      Value<bool> focusMusicEnabled,
+      Value<String> focusMusicUri,
+      Value<String> focusMusicName,
+      Value<int> timelineStartMinutes,
+      Value<int> timelineEndMinutes,
+      Value<bool> autoColorEnabled,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -6947,6 +7943,13 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int> longBreakMinutes,
       Value<int> longBreakInterval,
       Value<bool> notificationEnabled,
+      Value<bool> autoCompleteTaskOnFocus,
+      Value<bool> focusMusicEnabled,
+      Value<String> focusMusicUri,
+      Value<String> focusMusicName,
+      Value<int> timelineStartMinutes,
+      Value<int> timelineEndMinutes,
+      Value<bool> autoColorEnabled,
       Value<DateTime> updatedAt,
     });
 
@@ -7011,6 +8014,41 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get notificationEnabled => $composableBuilder(
     column: $table.notificationEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoCompleteTaskOnFocus => $composableBuilder(
+    column: $table.autoCompleteTaskOnFocus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get focusMusicEnabled => $composableBuilder(
+    column: $table.focusMusicEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get focusMusicUri => $composableBuilder(
+    column: $table.focusMusicUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get focusMusicName => $composableBuilder(
+    column: $table.focusMusicName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timelineStartMinutes => $composableBuilder(
+    column: $table.timelineStartMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timelineEndMinutes => $composableBuilder(
+    column: $table.timelineEndMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoColorEnabled => $composableBuilder(
+    column: $table.autoColorEnabled,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7084,6 +8122,41 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get autoCompleteTaskOnFocus => $composableBuilder(
+    column: $table.autoCompleteTaskOnFocus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get focusMusicEnabled => $composableBuilder(
+    column: $table.focusMusicEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get focusMusicUri => $composableBuilder(
+    column: $table.focusMusicUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get focusMusicName => $composableBuilder(
+    column: $table.focusMusicName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timelineStartMinutes => $composableBuilder(
+    column: $table.timelineStartMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timelineEndMinutes => $composableBuilder(
+    column: $table.timelineEndMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get autoColorEnabled => $composableBuilder(
+    column: $table.autoColorEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -7150,6 +8223,41 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get autoCompleteTaskOnFocus => $composableBuilder(
+    column: $table.autoCompleteTaskOnFocus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get focusMusicEnabled => $composableBuilder(
+    column: $table.focusMusicEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get focusMusicUri => $composableBuilder(
+    column: $table.focusMusicUri,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get focusMusicName => $composableBuilder(
+    column: $table.focusMusicName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timelineStartMinutes => $composableBuilder(
+    column: $table.timelineStartMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timelineEndMinutes => $composableBuilder(
+    column: $table.timelineEndMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoColorEnabled => $composableBuilder(
+    column: $table.autoColorEnabled,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
@@ -7209,6 +8317,13 @@ class $$AppSettingsTableTableTableManager
                 Value<int> longBreakMinutes = const Value.absent(),
                 Value<int> longBreakInterval = const Value.absent(),
                 Value<bool> notificationEnabled = const Value.absent(),
+                Value<bool> autoCompleteTaskOnFocus = const Value.absent(),
+                Value<bool> focusMusicEnabled = const Value.absent(),
+                Value<String> focusMusicUri = const Value.absent(),
+                Value<String> focusMusicName = const Value.absent(),
+                Value<int> timelineStartMinutes = const Value.absent(),
+                Value<int> timelineEndMinutes = const Value.absent(),
+                Value<bool> autoColorEnabled = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -7222,6 +8337,13 @@ class $$AppSettingsTableTableTableManager
                 longBreakMinutes: longBreakMinutes,
                 longBreakInterval: longBreakInterval,
                 notificationEnabled: notificationEnabled,
+                autoCompleteTaskOnFocus: autoCompleteTaskOnFocus,
+                focusMusicEnabled: focusMusicEnabled,
+                focusMusicUri: focusMusicUri,
+                focusMusicName: focusMusicName,
+                timelineStartMinutes: timelineStartMinutes,
+                timelineEndMinutes: timelineEndMinutes,
+                autoColorEnabled: autoColorEnabled,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -7237,6 +8359,13 @@ class $$AppSettingsTableTableTableManager
                 Value<int> longBreakMinutes = const Value.absent(),
                 Value<int> longBreakInterval = const Value.absent(),
                 Value<bool> notificationEnabled = const Value.absent(),
+                Value<bool> autoCompleteTaskOnFocus = const Value.absent(),
+                Value<bool> focusMusicEnabled = const Value.absent(),
+                Value<String> focusMusicUri = const Value.absent(),
+                Value<String> focusMusicName = const Value.absent(),
+                Value<int> timelineStartMinutes = const Value.absent(),
+                Value<int> timelineEndMinutes = const Value.absent(),
+                Value<bool> autoColorEnabled = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -7250,6 +8379,13 @@ class $$AppSettingsTableTableTableManager
                 longBreakMinutes: longBreakMinutes,
                 longBreakInterval: longBreakInterval,
                 notificationEnabled: notificationEnabled,
+                autoCompleteTaskOnFocus: autoCompleteTaskOnFocus,
+                focusMusicEnabled: focusMusicEnabled,
+                focusMusicUri: focusMusicUri,
+                focusMusicName: focusMusicName,
+                timelineStartMinutes: timelineStartMinutes,
+                timelineEndMinutes: timelineEndMinutes,
+                autoColorEnabled: autoColorEnabled,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper:
@@ -7284,6 +8420,191 @@ typedef $$AppSettingsTableTableProcessedTableManager =
       AppSettingsRow,
       PrefetchHooks Function()
     >;
+typedef $$FocusPresetsTableCreateCompanionBuilder =
+    FocusPresetsCompanion Function({
+      Value<int> id,
+      required String title,
+      Value<int> minutes,
+      required int colorValue,
+    });
+typedef $$FocusPresetsTableUpdateCompanionBuilder =
+    FocusPresetsCompanion Function({
+      Value<int> id,
+      Value<String> title,
+      Value<int> minutes,
+      Value<int> colorValue,
+    });
+
+class $$FocusPresetsTableFilterComposer
+    extends Composer<_$AppDatabase, $FocusPresetsTable> {
+  $$FocusPresetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minutes => $composableBuilder(
+    column: $table.minutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FocusPresetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FocusPresetsTable> {
+  $$FocusPresetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minutes => $composableBuilder(
+    column: $table.minutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FocusPresetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FocusPresetsTable> {
+  $$FocusPresetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get minutes =>
+      $composableBuilder(column: $table.minutes, builder: (column) => column);
+
+  GeneratedColumn<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => column,
+  );
+}
+
+class $$FocusPresetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FocusPresetsTable,
+          FocusPresetRow,
+          $$FocusPresetsTableFilterComposer,
+          $$FocusPresetsTableOrderingComposer,
+          $$FocusPresetsTableAnnotationComposer,
+          $$FocusPresetsTableCreateCompanionBuilder,
+          $$FocusPresetsTableUpdateCompanionBuilder,
+          (
+            FocusPresetRow,
+            BaseReferences<_$AppDatabase, $FocusPresetsTable, FocusPresetRow>,
+          ),
+          FocusPresetRow,
+          PrefetchHooks Function()
+        > {
+  $$FocusPresetsTableTableManager(_$AppDatabase db, $FocusPresetsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$FocusPresetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$FocusPresetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$FocusPresetsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<int> minutes = const Value.absent(),
+                Value<int> colorValue = const Value.absent(),
+              }) => FocusPresetsCompanion(
+                id: id,
+                title: title,
+                minutes: minutes,
+                colorValue: colorValue,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String title,
+                Value<int> minutes = const Value.absent(),
+                required int colorValue,
+              }) => FocusPresetsCompanion.insert(
+                id: id,
+                title: title,
+                minutes: minutes,
+                colorValue: colorValue,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FocusPresetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FocusPresetsTable,
+      FocusPresetRow,
+      $$FocusPresetsTableFilterComposer,
+      $$FocusPresetsTableOrderingComposer,
+      $$FocusPresetsTableAnnotationComposer,
+      $$FocusPresetsTableCreateCompanionBuilder,
+      $$FocusPresetsTableUpdateCompanionBuilder,
+      (
+        FocusPresetRow,
+        BaseReferences<_$AppDatabase, $FocusPresetsTable, FocusPresetRow>,
+      ),
+      FocusPresetRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7304,4 +8625,6 @@ class $AppDatabaseManager {
       $$MonthlyGoalsTableTableManager(_db, _db.monthlyGoals);
   $$AppSettingsTableTableTableManager get appSettingsTable =>
       $$AppSettingsTableTableTableManager(_db, _db.appSettingsTable);
+  $$FocusPresetsTableTableManager get focusPresets =>
+      $$FocusPresetsTableTableManager(_db, _db.focusPresets);
 }

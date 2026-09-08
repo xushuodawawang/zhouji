@@ -5,7 +5,7 @@ import 'package:zhouji/database/app_database.dart';
 import 'package:zhouji/repositories/plan_task_repository.dart';
 
 void main() {
-  test('V1 数据库升级到 V3 后保留旧任务并补齐默认值', () async {
+  test('V1 数据库升级到 V4 后保留旧任务并补齐默认值', () async {
     final sqlite = sqlite3.openInMemory();
     sqlite.execute('''
       CREATE TABLE plan_tasks (
@@ -73,9 +73,10 @@ void main() {
     expect((await database.getSettings()).overviewHourHeight, 28);
   });
 
-  test('V2 升级后保留任务与原设置，并补齐缩放和日期索引', () async {
-    final sqlite = sqlite3.openInMemory();
-    sqlite.execute('''
+  for (final oldVersion in [2, 3]) {
+    test('V$oldVersion 升级后保留任务与原设置，并补齐专注、缩放和日期索引', () async {
+      final sqlite = sqlite3.openInMemory();
+      sqlite.execute('''
       CREATE TABLE task_categories (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
@@ -84,7 +85,7 @@ void main() {
         created_at INTEGER NOT NULL
       )
     ''');
-    sqlite.execute('''
+      sqlite.execute('''
       CREATE TABLE app_settings_table (
         id INTEGER NOT NULL PRIMARY KEY,
         theme_mode TEXT NOT NULL DEFAULT 'system',
@@ -98,7 +99,7 @@ void main() {
         updated_at INTEGER NOT NULL
       )
     ''');
-    sqlite.execute('''
+      sqlite.execute('''
       CREATE TABLE plan_tasks (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -118,12 +119,12 @@ void main() {
         planned_duration_minutes INTEGER NULL
       )
     ''');
-    sqlite.execute('''
+      sqlite.execute('''
       INSERT INTO app_settings_table (
         id, theme_mode, week_view_mode, schedule_zoom, updated_at
       ) VALUES (1, 'dark', 'overview', 'compact', 1784505600)
     ''');
-    sqlite.execute('''
+      sqlite.execute('''
       INSERT INTO plan_tasks (
         title, task_date, start_minutes, end_minutes, color_value,
         note, created_at, updated_at
@@ -132,8 +133,8 @@ void main() {
         '升级不能删除', 1784505600, 1784505600
       )
     ''');
-    // V2 shipped both of these tables; include them in the historical fixture.
-    sqlite.execute('''
+      // V2 shipped both of these tables; include them in the historical fixture.
+      sqlite.execute('''
       CREATE TABLE activity_records (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         record_date INTEGER NOT NULL, title TEXT NOT NULL,
@@ -142,7 +143,7 @@ void main() {
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
       )
     ''');
-    sqlite.execute('''
+      sqlite.execute('''
       CREATE TABLE focus_sessions (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         session_date INTEGER NOT NULL, started_at INTEGER NOT NULL,
@@ -153,41 +154,65 @@ void main() {
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
       )
     ''');
-    sqlite.execute('PRAGMA user_version = 2');
+      if (oldVersion == 3) {
+        sqlite.execute(
+          'ALTER TABLE app_settings_table ADD COLUMN detail_hour_height REAL NOT NULL DEFAULT 56.0',
+        );
+        sqlite.execute(
+          'ALTER TABLE app_settings_table ADD COLUMN overview_hour_height REAL NOT NULL DEFAULT 28.0',
+        );
+      }
+      sqlite.execute('PRAGMA user_version = $oldVersion');
+      sqlite.execute('''CREATE TABLE active_timers (
+      id INTEGER NOT NULL PRIMARY KEY, mode TEXT NOT NULL, phase TEXT NOT NULL,
+      started_at INTEGER NOT NULL, expected_end_at INTEGER NOT NULL,
+      remaining_seconds INTEGER NOT NULL, is_running INTEGER NOT NULL,
+      cycle_count INTEGER NOT NULL DEFAULT 0, task_id INTEGER NULL,
+      category_id INTEGER NULL, updated_at INTEGER NOT NULL
+    )''');
 
-    final database = AppDatabase.forTesting(NativeDatabase.opened(sqlite));
-    addTearDown(database.close);
-    final settings = await database.getSettings();
-    final tasks =
-        await PlanTaskRepository(
-          database,
-        ).watchWeek(DateTime(2026, 7, 20)).first;
+      final database = AppDatabase.forTesting(NativeDatabase.opened(sqlite));
+      addTearDown(database.close);
+      final settings = await database.getSettings();
+      final tasks =
+          await PlanTaskRepository(
+            database,
+          ).watchWeek(DateTime(2026, 7, 20)).first;
 
-    expect(settings.themeMode, 'dark');
-    expect(settings.weekViewMode, 'overview');
-    expect(settings.detailHourHeight, 56);
-    expect(settings.overviewHourHeight, 28);
-    expect(tasks.single.title, 'V2保留任务');
-    expect(tasks.single.note, '升级不能删除');
-    final indexes =
-        await database
-            .customSelect(
-              "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_%'",
-            )
-            .get();
-    expect(
-      indexes.map((row) => row.read<String>('name')),
-      containsAll(['idx_plan_date_start', 'idx_record_date', 'idx_focus_date']),
-    );
-    final queryPlan =
-        await database
-            .customSelect(
-              'EXPLAIN QUERY PLAN SELECT * FROM plan_tasks WHERE task_date >= 0 AND task_date < 2000000000',
-            )
-            .get();
-    expect(
-      queryPlan.map((row) => row.read<String>('detail')).join(' '),
-      contains('idx_plan_date_start'),
-    );
-  });
+      expect(settings.themeMode, 'dark');
+      expect(settings.timelineStartMinutes, 0);
+      expect(settings.timelineEndMinutes, 1440);
+      expect(settings.autoCompleteTaskOnFocus, isFalse);
+      expect(await database.select(database.focusPresets).get(), isEmpty);
+      expect(settings.weekViewMode, 'overview');
+      expect(settings.detailHourHeight, 56);
+      expect(settings.overviewHourHeight, 28);
+      expect(tasks.single.title, 'V2保留任务');
+      expect(tasks.single.note, '升级不能删除');
+      final indexes =
+          await database
+              .customSelect(
+                "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_%'",
+              )
+              .get();
+      expect(
+        indexes.map((row) => row.read<String>('name')),
+        containsAll([
+          'idx_plan_date_start',
+          'idx_record_date',
+          'idx_focus_date',
+        ]),
+      );
+      final queryPlan =
+          await database
+              .customSelect(
+                'EXPLAIN QUERY PLAN SELECT * FROM plan_tasks WHERE task_date >= 0 AND task_date < 2000000000',
+              )
+              .get();
+      expect(
+        queryPlan.map((row) => row.read<String>('detail')).join(' '),
+        contains('idx_plan_date_start'),
+      );
+    });
+  }
 }

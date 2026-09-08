@@ -9,8 +9,7 @@ import '../repositories/plan_task_repository.dart';
 import '../utils/date_time_utils.dart';
 import '../utils/time_snap_calculator.dart';
 import '../utils/timeline_position_calculator.dart';
-import '../widgets/detail_zoom_toolbar.dart';
-import '../widgets/plan_mode_toolbar.dart';
+import '../widgets/compact_create_task_button.dart';
 import '../widgets/task_editor_sheet.dart';
 import '../widgets/task_quick_action_menu.dart';
 import '../widgets/week_schedule.dart';
@@ -78,6 +77,21 @@ class _WeekPlanPageState extends ConsumerState<WeekPlanPage> {
         Expanded(
           child: tasks.when(
             data: (items) {
+              // Keep every timed task visible, including overnight tasks.
+              final visibleStart = items
+                  .where((t) => !t.isAllDay)
+                  .fold(
+                    settings.timelineStartMinutes,
+                    (a, t) =>
+                        t.startMinutes < a ? (t.startMinutes ~/ 60) * 60 : a,
+                  );
+              final visibleEnd = items
+                  .where((t) => !t.isAllDay)
+                  .fold(
+                    settings.timelineEndMinutes,
+                    (a, t) =>
+                        t.endMinutes > a ? ((t.endMinutes + 59) ~/ 60) * 60 : a,
+                  );
               if (settings.weekViewMode == WeekViewMode.overview) {
                 return WeekOverview(
                   weekStart: weekStart,
@@ -88,6 +102,8 @@ class _WeekPlanPageState extends ConsumerState<WeekPlanPage> {
                     ref.read(selectedDateProvider.notifier).state = date;
                     ref.read(planViewIndexProvider.notifier).state = 2;
                   },
+                  timelineStartMinutes: visibleStart,
+                  timelineEndMinutes: visibleEnd,
                 );
               }
               return WeekSchedule(
@@ -98,6 +114,8 @@ class _WeekPlanPageState extends ConsumerState<WeekPlanPage> {
                 onHourHeightChangeEnd: _persistDetailHourHeight,
                 onViewportHeightChanged:
                     (height) => _detailViewportHeight = height,
+                timelineStartMinutes: visibleStart,
+                timelineEndMinutes: visibleEnd,
                 onCreateTask: _createTask,
                 onTapEmpty: _createTask,
                 onEditTask: _editTask,
@@ -146,8 +164,14 @@ class _WeekPlanPageState extends ConsumerState<WeekPlanPage> {
         _detailViewportHeight > 0
             ? _detailViewportHeight
             : MediaQuery.sizeOf(context).height * 0.6;
+    final settings =
+        ref.read(appSettingsProvider).valueOrNull ?? const AppSettings();
     _updateDetailHourHeight(
-      TimelinePositionCalculator.fitHourHeight(available),
+      TimelinePositionCalculator.fitHourHeight(
+        available,
+        startMinutes: settings.timelineStartMinutes,
+        endMinutes: settings.timelineEndMinutes,
+      ),
     );
     _persistDetailHourHeight();
   }
@@ -334,48 +358,133 @@ class _WeekHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 8, 5),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  AppDateUtils.weekRangeLabel(weekStart),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+    return Theme(
+      data: Theme.of(context).copyWith(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 2, 8, 3),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    AppDateUtils.weekRangeLabel(weekStart),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
+                IconButton(
+                  tooltip: '上一周',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onPrevious,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    minimumSize: const Size(48, 36),
+                  ),
+                  onPressed: onToday,
+                  child: const Text('本周'),
+                ),
+                IconButton(
+                  tooltip: '下一周',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onNext,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 40,
+              child: Row(
+                children: [
+                  SegmentedButton<WeekViewMode>(
+                    style: const ButtonStyle(
+                      minimumSize: WidgetStatePropertyAll(Size(0, 36)),
+                      padding: WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(horizontal: 9),
+                      ),
+                    ),
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: WeekViewMode.overview,
+                        label: Text('总览'),
+                      ),
+                      ButtonSegment(
+                        value: WeekViewMode.detail,
+                        label: Text('详细'),
+                      ),
+                    ],
+                    selected: {settings.weekViewMode},
+                    onSelectionChanged: (value) => onModeChanged(value.first),
+                  ),
+                  const Spacer(),
+                  if (settings.weekViewMode == WeekViewMode.detail) ...[
+                    IconButton.outlined(
+                      key: const ValueKey('detail-zoom-out'),
+                      tooltip: '缩小时间表',
+                      constraints: const BoxConstraints.tightFor(
+                        width: 36,
+                        height: 36,
+                      ),
+                      padding: EdgeInsets.zero,
+                      onPressed:
+                          detailHourHeight >
+                                  TimelinePositionCalculator.minHourHeight
+                              ? onZoomOut
+                              : null,
+                      icon: const Icon(Icons.remove, size: 18),
+                    ),
+                    SizedBox(
+                      width: 42,
+                      child: Text(
+                        '${TimelinePositionCalculator.zoomPercentage(detailHourHeight)}%',
+                        key: const ValueKey('detail-zoom-percentage'),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ),
+                    IconButton.outlined(
+                      key: const ValueKey('detail-zoom-in'),
+                      tooltip: '放大时间表',
+                      constraints: const BoxConstraints.tightFor(
+                        width: 36,
+                        height: 36,
+                      ),
+                      padding: EdgeInsets.zero,
+                      onPressed:
+                          detailHourHeight <
+                                  TimelinePositionCalculator.maxHourHeight
+                              ? onZoomIn
+                              : null,
+                      icon: const Icon(Icons.add, size: 18),
+                    ),
+                    IconButton(
+                      key: const ValueKey('detail-zoom-fit-day'),
+                      tooltip: '适配整天',
+                      constraints: const BoxConstraints.tightFor(
+                        width: 38,
+                        height: 38,
+                      ),
+                      onPressed: onFitDay,
+                      icon: const Icon(Icons.fit_screen_outlined, size: 19),
+                    ),
+                  ],
+                  CompactCreateTaskButton(
+                    showLabel: false,
+                    onPressed: onCreate,
+                  ),
+                ],
               ),
-              IconButton(
-                tooltip: '上一周',
-                onPressed: onPrevious,
-                icon: const Icon(Icons.chevron_left),
-              ),
-              TextButton(onPressed: onToday, child: const Text('本周')),
-              IconButton(
-                tooltip: '下一周',
-                onPressed: onNext,
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
-          PlanModeToolbar(
-            mode: settings.weekViewMode,
-            onModeChanged: onModeChanged,
-            onCreate: onCreate,
-          ),
-          if (settings.weekViewMode == WeekViewMode.detail) ...[
-            const SizedBox(height: 3),
-            DetailZoomToolbar(
-              hourHeight: detailHourHeight,
-              onZoomOut: onZoomOut,
-              onZoomIn: onZoomIn,
-              onFitDay: onFitDay,
             ),
           ],
-        ],
+        ),
       ),
     );
   }

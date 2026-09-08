@@ -41,6 +41,7 @@ class _ActivityEditorDialogState extends State<ActivityEditorDialog> {
   late final TextEditingController _noteController;
   int? _startMinutes;
   int? _endMinutes;
+  late bool _isCompleted;
 
   @override
   void initState() {
@@ -53,6 +54,7 @@ class _ActivityEditorDialogState extends State<ActivityEditorDialog> {
     _noteController = TextEditingController(text: record?.note);
     _startMinutes = record?.startMinutes;
     _endMinutes = record?.endMinutes;
+    _isCompleted = record?.isCompleted ?? true;
   }
 
   @override
@@ -190,6 +192,15 @@ class _ActivityEditorDialogState extends State<ActivityEditorDialog> {
                     alignLabelWithHint: true,
                   ),
                 ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('已经完成'),
+                  subtitle: Text(
+                    _isCompleted ? '计入实际完成时长' : '保留为未完成记录，不计入完成时长',
+                  ),
+                  value: _isCompleted,
+                  onChanged: (value) => setState(() => _isCompleted = value),
+                ),
               ],
             ),
           ),
@@ -265,6 +276,7 @@ class _ActivityEditorDialogState extends State<ActivityEditorDialog> {
           endMinutes: _endMinutes,
           durationMinutes: int.parse(_durationController.text),
           note: _noteController.text.trim(),
+          isCompleted: _isCompleted,
         ),
       ),
     );

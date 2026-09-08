@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../widgets/lazy_page_stack.dart';
 import '../widgets/zhouji_mark.dart';
+import '../widgets/timeline_settings_sheet.dart';
 import 'day_plan_page.dart';
 import 'month_plan_page.dart';
 import 'week_plan_page.dart';
@@ -17,11 +18,11 @@ class PlanPage extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
           child: Row(
             children: [
-              const ZhoujiMark(size: 38),
-              const SizedBox(width: 10),
+              const ZhoujiMark(size: 30),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '周迹',
@@ -30,37 +31,31 @@ class PlanPage extends ConsumerWidget {
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
-              Text(
-                '让每一天，留下足迹',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              IconButton(
+                tooltip: '时间轴与配色',
+                visualDensity: VisualDensity.compact,
+                onPressed: () => showTimelineSettings(context),
+                icon: const Icon(Icons.tune, size: 20),
               ),
             ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
           child: SizedBox(
             width: double.infinity,
             child: SegmentedButton<int>(
+              style: const ButtonStyle(
+                minimumSize: WidgetStatePropertyAll(Size(0, 38)),
+                padding: WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
               showSelectedIcon: false,
               segments: const [
-                ButtonSegment(
-                  value: 0,
-                  icon: Icon(Icons.view_week_outlined, size: 18),
-                  label: Text('周计划'),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  icon: Icon(Icons.calendar_month_outlined, size: 18),
-                  label: Text('月计划'),
-                ),
-                ButtonSegment(
-                  value: 2,
-                  icon: Icon(Icons.view_day_outlined, size: 18),
-                  label: Text('日计划'),
-                ),
+                ButtonSegment(value: 0, label: Text('周计划')),
+                ButtonSegment(value: 1, label: Text('月计划')),
+                ButtonSegment(value: 2, label: Text('日计划')),
               ],
               selected: {index},
               onSelectionChanged:

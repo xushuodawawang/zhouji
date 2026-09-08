@@ -15,17 +15,17 @@ abstract final class TaskConflictService {
   ) {
     if (draft.isAllDay) return null;
     for (final task in existing) {
-      if (task.id == draft.id ||
-          task.isAllDay ||
-          !AppDateUtils.isSameDate(task.taskDate, draft.taskDate)) {
+      if (task.id == draft.id || task.isAllDay) {
         continue;
       }
-      if (overlaps(
-        start: draft.startMinutes,
-        end: draft.endMinutes,
-        otherStart: task.startMinutes,
-        otherEnd: task.endMinutes,
-      )) {
+      if (AppDateUtils.atMinutes(
+            draft.taskDate,
+            draft.startMinutes,
+          ).isBefore(AppDateUtils.atMinutes(task.taskDate, task.endMinutes)) &&
+          AppDateUtils.atMinutes(
+            draft.taskDate,
+            draft.endMinutes,
+          ).isAfter(AppDateUtils.atMinutes(task.taskDate, task.startMinutes))) {
         return task;
       }
     }

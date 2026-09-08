@@ -10,22 +10,39 @@ import '../providers/app_providers.dart';
 import '../providers/focus_timer_controller.dart';
 import '../utils/date_time_utils.dart';
 import '../widgets/page_heading.dart';
+import '../widgets/focus_preset_cards.dart';
+
+final _focusScrollProvider = Provider.autoDispose<ScrollController>((ref) {
+  final controller = ScrollController();
+  ref.onDispose(controller.dispose);
+  return controller;
+});
 
 class FocusPage extends ConsumerWidget {
   const FocusPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(currentMinuteProvider);
     // Only phase/control changes rebuild the form and history; seconds belong to the dial.
     ref.watch(
       focusTimerProvider.select(
-        (s) => (s.status, s.phase, s.taskId, s.cycleCount, s.restoring),
+        (s) => (
+          s.status,
+          s.phase,
+          s.taskId,
+          s.cycleCount,
+          s.restoring,
+          s.title,
+          s.totalSeconds,
+        ),
       ),
     );
     final timer = ref.read(focusTimerProvider);
     final settings =
         ref.watch(appSettingsProvider).valueOrNull ?? const AppSettings();
-    final tasks = ref.watch(todayTasksProvider).valueOrNull ?? const [];
+    final tasks =
+        ref.watch(focusCandidateTasksProvider).valueOrNull ?? const [];
     final sessions =
         ref.watch(todayFocusSessionsProvider).valueOrNull ?? const [];
     final recommendation = _recommendedTask(tasks);
@@ -34,6 +51,7 @@ class FocusPage extends ConsumerWidget {
 
     return Scaffold(
       body: ListView(
+        controller: ref.watch(_focusScrollProvider),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
         children: [
           PageHeading(
@@ -48,19 +66,45 @@ class FocusPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 14),
-          if (recommendation != null && !timer.isActive)
+          if (!timer.isActive && !timer.isBreak) ...[
+            FocusPresetCards(
+              enabled: !timer.restoring,
+              onStart: (preset) {
+                final matching =
+                    recommendation?.title.trim() == preset.title.trim()
+                        ? recommendation
+                        : tasks
+                            .where(
+                              (t) =>
+                                  !t.isCompleted &&
+                                  AppDateUtils.isSameDate(
+                                    t.taskDate,
+                                    DateTime.now(),
+                                  ) &&
+                                  t.title.trim() == preset.title.trim(),
+                            )
+                            .firstOrNull;
+                final controller = ref.read(focusTimerProvider.notifier);
+                controller.selectTask(
+                  taskId: matching?.id,
+                  categoryId: matching?.categoryId,
+                  focusMinutes: preset.minutes,
+                  title: preset.title,
+                );
+                controller.start();
+                ref.read(_focusScrollProvider).jumpTo(0);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (recommendation != null && !timer.isActive && !timer.isBreak)
             _RecommendationCard(
               task: recommendation,
               onStart: () {
-                ref.read(focusTimerProvider.notifier)
-                  ..selectTask(
-                    taskId: recommendation.id,
-                    categoryId: recommendation.categoryId,
-                  )
-                  ..start();
+                _startFocus(ref, recommendation, settings);
               },
             ),
-          if (recommendation != null && !timer.isActive)
+          if (recommendation != null && !timer.isActive && !timer.isBreak)
             const SizedBox(height: 12),
           Card(
             child: Padding(
@@ -98,13 +142,13 @@ class FocusPage extends ConsumerWidget {
                     isExpanded: true,
                     initialValue: selectedTask?.id ?? 0,
                     decoration: const InputDecoration(
-                      labelText: '关联计划（选填）',
+                      labelText: '当前专注任务',
                       prefixIcon: Icon(Icons.link),
                     ),
                     items: [
                       const DropdownMenuItem(
                         value: 0,
-                        child: Text('临时专注，不关联任务'),
+                        child: Text('自动使用此刻的计划'),
                       ),
                       for (final task in tasks.where((task) => !task.isAllDay))
                         DropdownMenuItem(
@@ -128,7 +172,11 @@ class FocusPage extends ConsumerWidget {
                                   .read(focusTimerProvider.notifier)
                                   .selectTask(
                                     taskId: task?.id,
+                                    title: task?.title ?? '',
                                     categoryId: task?.categoryId,
+                                    focusMinutes:
+                                        task?.focusMinutes ??
+                                        settings.pomodoroFocusMinutes,
                                   );
                             },
                   ),
@@ -140,7 +188,11 @@ class FocusPage extends ConsumerWidget {
                         ? timer.phase == TimerPhase.longBreak
                             ? '长休息'
                             : '短休息'
-                        : selectedTask?.title ?? '自由专注',
+                        : timer.title.isNotEmpty
+                        ? timer.title
+                        : selectedTask?.title ??
+                            recommendation?.title ??
+                            '自由专注',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -149,7 +201,17 @@ class FocusPage extends ConsumerWidget {
                   _TimerActions(
                     state: timer,
                     onStart:
-                        () => ref.read(focusTimerProvider.notifier).start(),
+                        () => _startFocus(
+                          ref,
+                          selectedTask ??
+                              _recommendedTask(
+                                ref
+                                        .read(focusCandidateTasksProvider)
+                                        .valueOrNull ??
+                                    [],
+                              ),
+                          settings,
+                        ),
                     onPause:
                         () => ref.read(focusTimerProvider.notifier).pause(),
                     onResume:
@@ -175,6 +237,62 @@ class FocusPage extends ConsumerWidget {
               value: settings.notificationEnabled,
               onChanged:
                   (value) => _setNotifications(context, ref, settings, value),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: const Text('完成专注后完成计划'),
+                  subtitle: const Text('整段专注完成时，计划状态自动同步'),
+                  secondary: const Icon(Icons.sync_alt_rounded),
+                  value: settings.autoCompleteTaskOnFocus,
+                  onChanged:
+                      (value) => ref
+                          .read(settingsRepositoryProvider)
+                          .save(
+                            settings.copyWith(autoCompleteTaskOnFocus: value),
+                          ),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                SwitchListTile(
+                  title: const Text('专注背景音乐'),
+                  subtitle: Text(
+                    settings.focusMusicName.isEmpty
+                        ? '选择手机里的音频，专注时循环播放'
+                        : settings.focusMusicName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  secondary: const Icon(Icons.music_note_rounded),
+                  value: settings.focusMusicEnabled,
+                  onChanged:
+                      settings.focusMusicUri.isEmpty
+                          ? null
+                          : (value) => ref
+                              .read(settingsRepositoryProvider)
+                              .save(
+                                settings.copyWith(focusMusicEnabled: value),
+                              ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: TextButton.icon(
+                      onPressed:
+                          timer.isActive
+                              ? null
+                              : () => _pickFocusMusic(context, ref, settings),
+                      icon: const Icon(Icons.audio_file_outlined),
+                      label: Text(
+                        settings.focusMusicUri.isEmpty ? '选择音乐' : '更换音乐',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
@@ -204,7 +322,9 @@ class FocusPage extends ConsumerWidget {
                             : Icons.timelapse,
                       ),
                       title: Text(
-                        sessions[index].taskId == null
+                        sessions[index].note.isNotEmpty
+                            ? sessions[index].note
+                            : sessions[index].taskId == null
                             ? '临时专注'
                             : tasks
                                     .where(
@@ -233,25 +353,69 @@ class FocusPage extends ConsumerWidget {
 
   PlanTask? _recommendedTask(List<PlanTask> tasks) {
     final now = DateTime.now();
-    final minute = now.hour * 60 + now.minute;
     final candidates =
         tasks
             .where(
               (task) =>
                   !task.isAllDay &&
                   !task.isCompleted &&
-                  task.endMinutes > minute,
+                  !AppDateUtils.atMinutes(
+                    task.taskDate,
+                    task.startMinutes,
+                  ).isAfter(now) &&
+                  AppDateUtils.atMinutes(
+                    task.taskDate,
+                    task.endMinutes,
+                  ).isAfter(now),
             )
             .toList()
           ..sort((a, b) {
-            final aActive = a.startMinutes <= minute ? 0 : 1;
-            final bActive = b.startMinutes <= minute ? 0 : 1;
-            final activeCompare = aActive.compareTo(bActive);
-            return activeCompare != 0
-                ? activeCompare
-                : a.startMinutes.compareTo(b.startMinutes);
+            return a.startMinutes.compareTo(b.startMinutes);
           });
     return candidates.firstOrNull;
+  }
+
+  Future<void> _startFocus(
+    WidgetRef ref,
+    PlanTask? task,
+    AppSettings settings,
+  ) async {
+    final controller = ref.read(focusTimerProvider.notifier);
+    final current = ref.read(focusTimerProvider);
+    if (!current.isActive && !current.isBreak && task != null) {
+      controller.selectTask(
+        taskId: task.id,
+        title: task.title,
+        categoryId: task.categoryId,
+        focusMinutes: task.focusMinutes ?? settings.pomodoroFocusMinutes,
+      );
+    }
+    await controller.start();
+    final scroll = ref.read(_focusScrollProvider);
+    if (scroll.hasClients) scroll.jumpTo(0);
+  }
+
+  Future<void> _pickFocusMusic(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) async {
+    final selection = await ref.read(focusMusicServiceProvider).pickAudio();
+    if (selection == null) return;
+    await ref
+        .read(settingsRepositoryProvider)
+        .save(
+          settings.copyWith(
+            focusMusicUri: selection.uri,
+            focusMusicName: selection.name,
+            focusMusicEnabled: true,
+          ),
+        );
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('已选择 ${selection.name}')));
+    }
   }
 
   Future<void> _changePreset(
@@ -369,6 +533,13 @@ class FocusPage extends ConsumerWidget {
   ) async {
     await ref.read(focusTimerProvider.notifier).completeCurrent();
     if (!context.mounted) return;
+    if (ref.read(appSettingsProvider).valueOrNull?.autoCompleteTaskOnFocus ==
+        true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(taskId == null ? '已保存专注记录' : '已保存记录并完成计划')),
+      );
+      return;
+    }
     final markDone = await showDialog<bool>(
       context: context,
       builder:
@@ -418,7 +589,7 @@ class _RecommendationCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
         ),
-        title: Text('推荐：${task.title}'),
+        title: Text('此刻计划：${task.title}'),
         subtitle: Text(
           '${AppDateUtils.formatMinutes(task.startMinutes)}－'
           '${AppDateUtils.formatMinutes(task.endMinutes)}',
@@ -436,7 +607,26 @@ class _LiveTimerDial extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final visible = ref.watch(bottomNavigationIndexProvider) == 1;
     ref.watch(focusTimerProvider.select((state) => visible ? state : null));
-    return _TimerDial(state: ref.read(focusTimerProvider));
+    var state = ref.read(focusTimerProvider);
+    if (!state.isActive &&
+        !state.isBreak &&
+        state.taskId == null &&
+        state.title.isEmpty) {
+      final task = const FocusPage()._recommendedTask(
+        ref.watch(focusCandidateTasksProvider).valueOrNull ?? [],
+      );
+      if (task != null) {
+        final minutes =
+            task.focusMinutes ??
+            ref.watch(appSettingsProvider).valueOrNull?.pomodoroFocusMinutes ??
+            25;
+        state = state.copyWith(
+          totalSeconds: minutes * 60,
+          remainingSeconds: minutes * 60,
+        );
+      }
+    }
+    return _TimerDial(state: state);
   }
 }
 
@@ -512,10 +702,18 @@ class _TimerActions extends StatelessWidget {
       return const CircularProgressIndicator();
     }
     if (state.status == FocusTimerStatus.idle) {
-      return FilledButton.icon(
-        onPressed: onStart,
-        icon: const Icon(Icons.play_arrow),
-        label: Text(state.isBreak ? '开始休息' : '开始专注'),
+      return Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 8,
+        children: [
+          FilledButton.icon(
+            onPressed: onStart,
+            icon: const Icon(Icons.play_arrow),
+            label: Text(state.isBreak ? '开始休息' : '开始专注'),
+          ),
+          if (state.isBreak)
+            TextButton(onPressed: onSkip, child: const Text('跳过休息')),
+        ],
       );
     }
     return Wrap(
