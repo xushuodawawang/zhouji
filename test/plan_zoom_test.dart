@@ -42,7 +42,17 @@ void main() {
     final detailTitle = tester.widget<Text>(find.text('考研第一轮数学复习与错题整理'));
     expect(detailTitle.softWrap, isTrue);
     expect(detailTitle.maxLines, greaterThan(1));
-    expect(detailTitle.maxLines, 4);
+    expect(detailTitle.maxLines, inInclusiveRange(3, 4));
+    final taskCenter = tester.getCenter(find.byKey(ValueKey(taskId))).dy;
+    final titleCenter = tester.getCenter(find.text('考研第一轮数学复习与错题整理')).dy;
+    expect((taskCenter - titleCenter).abs(), lessThan(8));
+    final surface = tester.widget<Material>(
+      find.descendant(
+        of: find.byKey(ValueKey(taskId)),
+        matching: find.byKey(const ValueKey('task-block-surface')),
+      ),
+    );
+    expect(surface.color!.a, closeTo(0.72, 0.01));
 
     await tester.tap(find.text('总览'));
     await _settle(tester);

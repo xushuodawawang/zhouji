@@ -4520,6 +4520,18 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _taskCardOpacityMeta = const VerificationMeta(
+    'taskCardOpacity',
+  );
+  @override
+  late final GeneratedColumn<double> taskCardOpacity = GeneratedColumn<double>(
+    'task_card_opacity',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.72),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -4551,6 +4563,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     timelineStartMinutes,
     timelineEndMinutes,
     autoColorEnabled,
+    taskCardOpacity,
     updatedAt,
   ];
   @override
@@ -4718,6 +4731,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('task_card_opacity')) {
+      context.handle(
+        _taskCardOpacityMeta,
+        taskCardOpacity.isAcceptableOrUnknown(
+          data['task_card_opacity']!,
+          _taskCardOpacityMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -4825,6 +4847,11 @@ class $AppSettingsTableTable extends AppSettingsTable
             DriftSqlType.bool,
             data['${effectivePrefix}auto_color_enabled'],
           )!,
+      taskCardOpacity:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}task_card_opacity'],
+          )!,
       updatedAt:
           attachedDatabase.typeMapping.read(
             DriftSqlType.dateTime,
@@ -4858,6 +4885,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final int timelineStartMinutes;
   final int timelineEndMinutes;
   final bool autoColorEnabled;
+  final double taskCardOpacity;
   final DateTime updatedAt;
   const AppSettingsRow({
     required this.id,
@@ -4878,6 +4906,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.timelineStartMinutes,
     required this.timelineEndMinutes,
     required this.autoColorEnabled,
+    required this.taskCardOpacity,
     required this.updatedAt,
   });
   @override
@@ -4903,6 +4932,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['timeline_start_minutes'] = Variable<int>(timelineStartMinutes);
     map['timeline_end_minutes'] = Variable<int>(timelineEndMinutes);
     map['auto_color_enabled'] = Variable<bool>(autoColorEnabled);
+    map['task_card_opacity'] = Variable<double>(taskCardOpacity);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -4927,6 +4957,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       timelineStartMinutes: Value(timelineStartMinutes),
       timelineEndMinutes: Value(timelineEndMinutes),
       autoColorEnabled: Value(autoColorEnabled),
+      taskCardOpacity: Value(taskCardOpacity),
       updatedAt: Value(updatedAt),
     );
   }
@@ -4965,6 +4996,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       ),
       timelineEndMinutes: serializer.fromJson<int>(json['timelineEndMinutes']),
       autoColorEnabled: serializer.fromJson<bool>(json['autoColorEnabled']),
+      taskCardOpacity: serializer.fromJson<double>(json['taskCardOpacity']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -4992,6 +5024,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'timelineStartMinutes': serializer.toJson<int>(timelineStartMinutes),
       'timelineEndMinutes': serializer.toJson<int>(timelineEndMinutes),
       'autoColorEnabled': serializer.toJson<bool>(autoColorEnabled),
+      'taskCardOpacity': serializer.toJson<double>(taskCardOpacity),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -5015,6 +5048,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     int? timelineStartMinutes,
     int? timelineEndMinutes,
     bool? autoColorEnabled,
+    double? taskCardOpacity,
     DateTime? updatedAt,
   }) => AppSettingsRow(
     id: id ?? this.id,
@@ -5036,6 +5070,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     timelineStartMinutes: timelineStartMinutes ?? this.timelineStartMinutes,
     timelineEndMinutes: timelineEndMinutes ?? this.timelineEndMinutes,
     autoColorEnabled: autoColorEnabled ?? this.autoColorEnabled,
+    taskCardOpacity: taskCardOpacity ?? this.taskCardOpacity,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsRow copyWithCompanion(AppSettingsTableCompanion data) {
@@ -5106,6 +5141,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           data.autoColorEnabled.present
               ? data.autoColorEnabled.value
               : this.autoColorEnabled,
+      taskCardOpacity:
+          data.taskCardOpacity.present
+              ? data.taskCardOpacity.value
+              : this.taskCardOpacity,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -5131,6 +5170,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('timelineStartMinutes: $timelineStartMinutes, ')
           ..write('timelineEndMinutes: $timelineEndMinutes, ')
           ..write('autoColorEnabled: $autoColorEnabled, ')
+          ..write('taskCardOpacity: $taskCardOpacity, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -5156,6 +5196,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     timelineStartMinutes,
     timelineEndMinutes,
     autoColorEnabled,
+    taskCardOpacity,
     updatedAt,
   );
   @override
@@ -5180,6 +5221,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.timelineStartMinutes == this.timelineStartMinutes &&
           other.timelineEndMinutes == this.timelineEndMinutes &&
           other.autoColorEnabled == this.autoColorEnabled &&
+          other.taskCardOpacity == this.taskCardOpacity &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -5202,6 +5244,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> timelineStartMinutes;
   final Value<int> timelineEndMinutes;
   final Value<bool> autoColorEnabled;
+  final Value<double> taskCardOpacity;
   final Value<DateTime> updatedAt;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
@@ -5222,6 +5265,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.timelineStartMinutes = const Value.absent(),
     this.timelineEndMinutes = const Value.absent(),
     this.autoColorEnabled = const Value.absent(),
+    this.taskCardOpacity = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
@@ -5243,6 +5287,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.timelineStartMinutes = const Value.absent(),
     this.timelineEndMinutes = const Value.absent(),
     this.autoColorEnabled = const Value.absent(),
+    this.taskCardOpacity = const Value.absent(),
     required DateTime updatedAt,
   }) : updatedAt = Value(updatedAt);
   static Insertable<AppSettingsRow> custom({
@@ -5264,6 +5309,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? timelineStartMinutes,
     Expression<int>? timelineEndMinutes,
     Expression<bool>? autoColorEnabled,
+    Expression<double>? taskCardOpacity,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -5291,6 +5337,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (timelineEndMinutes != null)
         'timeline_end_minutes': timelineEndMinutes,
       if (autoColorEnabled != null) 'auto_color_enabled': autoColorEnabled,
+      if (taskCardOpacity != null) 'task_card_opacity': taskCardOpacity,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -5314,6 +5361,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? timelineStartMinutes,
     Value<int>? timelineEndMinutes,
     Value<bool>? autoColorEnabled,
+    Value<double>? taskCardOpacity,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsTableCompanion(
@@ -5336,6 +5384,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       timelineStartMinutes: timelineStartMinutes ?? this.timelineStartMinutes,
       timelineEndMinutes: timelineEndMinutes ?? this.timelineEndMinutes,
       autoColorEnabled: autoColorEnabled ?? this.autoColorEnabled,
+      taskCardOpacity: taskCardOpacity ?? this.taskCardOpacity,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -5399,6 +5448,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (autoColorEnabled.present) {
       map['auto_color_enabled'] = Variable<bool>(autoColorEnabled.value);
     }
+    if (taskCardOpacity.present) {
+      map['task_card_opacity'] = Variable<double>(taskCardOpacity.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -5426,6 +5478,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('timelineStartMinutes: $timelineStartMinutes, ')
           ..write('timelineEndMinutes: $timelineEndMinutes, ')
           ..write('autoColorEnabled: $autoColorEnabled, ')
+          ..write('taskCardOpacity: $taskCardOpacity, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -7928,6 +7981,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int> timelineStartMinutes,
       Value<int> timelineEndMinutes,
       Value<bool> autoColorEnabled,
+      Value<double> taskCardOpacity,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
@@ -7950,6 +8004,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int> timelineStartMinutes,
       Value<int> timelineEndMinutes,
       Value<bool> autoColorEnabled,
+      Value<double> taskCardOpacity,
       Value<DateTime> updatedAt,
     });
 
@@ -8049,6 +8104,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get autoColorEnabled => $composableBuilder(
     column: $table.autoColorEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taskCardOpacity => $composableBuilder(
+    column: $table.taskCardOpacity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8157,6 +8217,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get taskCardOpacity => $composableBuilder(
+    column: $table.taskCardOpacity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -8258,6 +8323,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get taskCardOpacity => $composableBuilder(
+    column: $table.taskCardOpacity,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
@@ -8324,6 +8394,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> timelineStartMinutes = const Value.absent(),
                 Value<int> timelineEndMinutes = const Value.absent(),
                 Value<bool> autoColorEnabled = const Value.absent(),
+                Value<double> taskCardOpacity = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
@@ -8344,6 +8415,7 @@ class $$AppSettingsTableTableTableManager
                 timelineStartMinutes: timelineStartMinutes,
                 timelineEndMinutes: timelineEndMinutes,
                 autoColorEnabled: autoColorEnabled,
+                taskCardOpacity: taskCardOpacity,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -8366,6 +8438,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> timelineStartMinutes = const Value.absent(),
                 Value<int> timelineEndMinutes = const Value.absent(),
                 Value<bool> autoColorEnabled = const Value.absent(),
+                Value<double> taskCardOpacity = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsTableCompanion.insert(
                 id: id,
@@ -8386,6 +8459,7 @@ class $$AppSettingsTableTableTableManager
                 timelineStartMinutes: timelineStartMinutes,
                 timelineEndMinutes: timelineEndMinutes,
                 autoColorEnabled: autoColorEnabled,
+                taskCardOpacity: taskCardOpacity,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper:

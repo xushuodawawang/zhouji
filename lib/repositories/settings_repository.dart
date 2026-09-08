@@ -31,6 +31,7 @@ class SettingsRepository {
       timelineStartMinutes: Value(settings.timelineStartMinutes),
       timelineEndMinutes: Value(settings.timelineEndMinutes),
       autoColorEnabled: Value(settings.autoColorEnabled),
+      taskCardOpacity: Value(settings.taskCardOpacity),
     ),
   );
 
@@ -52,5 +53,6 @@ class SettingsRepository {
     timelineStartMinutes: row.timelineStartMinutes,
     timelineEndMinutes: row.timelineEndMinutes,
     autoColorEnabled: row.autoColorEnabled,
+    taskCardOpacity: row.taskCardOpacity,
   );
 }

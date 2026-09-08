@@ -21,6 +21,7 @@ class AppSettings {
     this.timelineStartMinutes = 0,
     this.timelineEndMinutes = 24 * 60,
     this.autoColorEnabled = true,
+    this.taskCardOpacity = 0.72,
   });
 
   final String themeMode;
@@ -40,6 +41,7 @@ class AppSettings {
   final int timelineStartMinutes;
   final int timelineEndMinutes;
   final bool autoColorEnabled;
+  final double taskCardOpacity;
 
   AppSettings copyWith({
     String? themeMode,
@@ -59,6 +61,7 @@ class AppSettings {
     int? timelineStartMinutes,
     int? timelineEndMinutes,
     bool? autoColorEnabled,
+    double? taskCardOpacity,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     weekViewMode: weekViewMode ?? this.weekViewMode,
@@ -78,5 +81,6 @@ class AppSettings {
     timelineStartMinutes: timelineStartMinutes ?? this.timelineStartMinutes,
     timelineEndMinutes: timelineEndMinutes ?? this.timelineEndMinutes,
     autoColorEnabled: autoColorEnabled ?? this.autoColorEnabled,
+    taskCardOpacity: taskCardOpacity ?? this.taskCardOpacity,
   );
 }

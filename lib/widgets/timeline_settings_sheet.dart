@@ -12,12 +12,22 @@ Future<void> showTimelineSettings(BuildContext context) =>
       builder: (_) => const TimelineSettingsSheet(),
     );
 
-class TimelineSettingsSheet extends ConsumerWidget {
+class TimelineSettingsSheet extends ConsumerStatefulWidget {
   const TimelineSettingsSheet({super.key});
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TimelineSettingsSheet> createState() =>
+      _TimelineSettingsSheetState();
+}
+
+class _TimelineSettingsSheetState extends ConsumerState<TimelineSettingsSheet> {
+  double? _pendingOpacity;
+
+  @override
+  Widget build(BuildContext context) {
     final settings =
         ref.watch(appSettingsProvider).valueOrNull ?? const AppSettings();
+    final opacity = _pendingOpacity ?? settings.taskCardOpacity;
     return ListView(
       shrinkWrap: true,
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -76,6 +86,38 @@ class TimelineSettingsSheet extends ConsumerWidget {
                   .read(settingsRepositoryProvider)
                   .save(settings.copyWith(autoColorEnabled: v)),
         ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                '任务卡透明度',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Text('${(opacity * 100).round()}%'),
+          ],
+        ),
+        Slider(
+          key: const ValueKey('task-card-opacity'),
+          value: opacity,
+          min: 0.25,
+          max: 1,
+          divisions: 15,
+          label: '${(opacity * 100).round()}%',
+          onChanged: (value) => setState(() => _pendingOpacity = value),
+          onChangeEnd: (value) async {
+            await ref
+                .read(settingsRepositoryProvider)
+                .save(settings.copyWith(taskCardOpacity: value));
+            if (mounted) setState(() => _pendingOpacity = null);
+          },
+        ),
+        Text(
+          '只改变卡片背景，标题、时间和操作按钮保持清晰。',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
         TextButton(
           onPressed:
               () => ref

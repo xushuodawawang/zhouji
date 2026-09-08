@@ -19,6 +19,7 @@ class WeekOverview extends StatelessWidget {
     required this.onDayTap,
     this.timelineStartMinutes = 0,
     this.timelineEndMinutes = 1440,
+    this.taskCardOpacity = 0.72,
   });
 
   final DateTime weekStart;
@@ -28,6 +29,7 @@ class WeekOverview extends StatelessWidget {
   final ValueChanged<DateTime> onDayTap;
   final int timelineStartMinutes;
   final int timelineEndMinutes;
+  final double taskCardOpacity;
 
   static const _axisWidth = 42.0;
   static const _headerHeight = 46.0;
@@ -150,6 +152,8 @@ class WeekOverview extends StatelessWidget {
                                       color: AppColors.taskSurface(
                                         context,
                                         Color(layout.task.colorValue),
+                                      ).withValues(
+                                        alpha: taskCardOpacity.clamp(0.25, 1),
                                       ),
                                       borderRadius: BorderRadius.circular(7),
                                       clipBehavior: Clip.antiAlias,

@@ -25,6 +25,7 @@ class WeekSchedule extends StatefulWidget {
     required this.onViewportHeightChanged,
     this.timelineStartMinutes = 0,
     this.timelineEndMinutes = 1440,
+    this.taskCardOpacity = 0.72,
   });
 
   final DateTime weekStart;
@@ -42,6 +43,7 @@ class WeekSchedule extends StatefulWidget {
   final ValueChanged<double> onViewportHeightChanged;
   final int timelineStartMinutes;
   final int timelineEndMinutes;
+  final double taskCardOpacity;
 
   @override
   State<WeekSchedule> createState() => _WeekScheduleState();
@@ -490,6 +492,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
         actualHeight: actualHeight,
         isSelected: _selectedTaskId == task.id,
         isDimmed: _selectedTaskId != null && _selectedTaskId != task.id,
+        backgroundOpacity: widget.taskCardOpacity,
         onTap: () => _openTask(task),
         onLongPress: () => _openTaskMenu(task),
         onMoveStart: (details) => _startMove(task, details.globalPosition),
@@ -530,6 +533,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
               task: preview,
               actualHeight: actualHeight,
               isPreview: true,
+              backgroundOpacity: widget.taskCardOpacity,
               onTap: () {},
               onLongPress: () {},
               onMoveStart: (_) {},

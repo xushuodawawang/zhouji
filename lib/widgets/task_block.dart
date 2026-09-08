@@ -27,6 +27,7 @@ class TaskBlock extends StatelessWidget {
     this.isPreview = false,
     this.isSelected = false,
     this.isDimmed = false,
+    this.backgroundOpacity = 0.72,
   });
 
   final PlanTask task;
@@ -48,6 +49,7 @@ class TaskBlock extends StatelessWidget {
   final bool isPreview;
   final bool isSelected;
   final bool isDimmed;
+  final double backgroundOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +90,11 @@ class TaskBlock extends StatelessWidget {
                   : null,
         ),
         child: Material(
-          color: AppColors.taskSurface(context, color),
+          key: const ValueKey('task-block-surface'),
+          color: AppColors.taskSurface(
+            context,
+            color,
+          ).withValues(alpha: backgroundOpacity.clamp(0.25, 1)),
           borderRadius: BorderRadius.circular(10),
           clipBehavior: Clip.antiAlias,
           child: TaskHitArea(
@@ -113,44 +119,54 @@ class TaskBlock extends StatelessWidget {
                     padding: EdgeInsets.fromLTRB(8, 4, interactive ? 42 : 6, 4),
                     child: LayoutBuilder(
                       builder:
-                          (context, constraints) => Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          (context, constraints) => Stack(
                             children: [
-                              TaskTitle(
-                                title: task.title,
-                                cardHeight: constraints.maxHeight,
-                                color: foreground,
-                                fontSize: 12,
-                                trailing: [
-                                  if (task.isLocked)
-                                    Icon(
-                                      Icons.lock,
-                                      size: 13,
-                                      color: foreground,
-                                    ),
-                                  if (status == TaskDisplayStatus.completed)
-                                    Icon(
-                                      Icons.check_circle,
-                                      size: 13,
-                                      color: foreground,
-                                    ),
-                                ],
-                              ),
-                              if (constraints.maxHeight >= 72) ...[
-                                const Spacer(),
-                                Text(
-                                  '${AppDateUtils.formatMinutes(task.startMinutes)}'
-                                  '－${AppDateUtils.formatMinutes(task.endMinutes)}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.fade,
-                                  softWrap: false,
-                                  style: TextStyle(
-                                    color: foreground.withAlpha(215),
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
+                              Positioned.fill(
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TaskTitle(
+                                    title: task.title,
+                                    cardHeight:
+                                        constraints.maxHeight >= 72
+                                            ? constraints.maxHeight - 24
+                                            : constraints.maxHeight,
+                                    color: foreground,
+                                    fontSize: 12,
+                                    trailing: [
+                                      if (task.isLocked)
+                                        Icon(
+                                          Icons.lock,
+                                          size: 13,
+                                          color: foreground,
+                                        ),
+                                      if (status == TaskDisplayStatus.completed)
+                                        Icon(
+                                          Icons.check_circle,
+                                          size: 13,
+                                          color: foreground,
+                                        ),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
+                              if (constraints.maxHeight >= 72)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Text(
+                                    '${AppDateUtils.formatMinutes(task.startMinutes)}'
+                                    '－${AppDateUtils.formatMinutes(task.endMinutes)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.fade,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      color: foreground.withAlpha(215),
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                     ),

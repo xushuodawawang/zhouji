@@ -151,6 +151,7 @@ class AppSettingsTable extends Table {
       integer().withDefault(const Constant(1440))();
   BoolColumn get autoColorEnabled =>
       boolean().withDefault(const Constant(true))();
+  RealColumn get taskCardOpacity => real().withDefault(const Constant(0.72))();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -199,7 +200,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -263,6 +264,12 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(
           appSettingsTable,
           appSettingsTable.autoColorEnabled,
+        );
+      }
+      if (from >= 2 && from < 5) {
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.taskCardOpacity,
         );
       }
     },

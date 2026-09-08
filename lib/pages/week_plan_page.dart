@@ -104,6 +104,7 @@ class _WeekPlanPageState extends ConsumerState<WeekPlanPage> {
                   },
                   timelineStartMinutes: visibleStart,
                   timelineEndMinutes: visibleEnd,
+                  taskCardOpacity: settings.taskCardOpacity,
                 );
               }
               return WeekSchedule(
@@ -116,6 +117,7 @@ class _WeekPlanPageState extends ConsumerState<WeekPlanPage> {
                     (height) => _detailViewportHeight = height,
                 timelineStartMinutes: visibleStart,
                 timelineEndMinutes: visibleEnd,
+                taskCardOpacity: settings.taskCardOpacity,
                 onCreateTask: _createTask,
                 onTapEmpty: _createTask,
                 onEditTask: _editTask,
