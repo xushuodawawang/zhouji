@@ -407,15 +407,17 @@ class _FocusRing extends CustomPainter {
     var start = -math.pi / 2;
     for (var i = 0; i < values.length; i++) {
       final sweep = math.pi * 2 * values[i] / total;
+      final gap = values.length > 1 ? math.min(0.035, sweep * 0.16) : 0.0;
       canvas.drawArc(
         (Offset.zero & size).deflate(12),
-        start,
-        sweep,
+        start + gap / 2,
+        sweep - gap,
         false,
         Paint()
           ..color = Color(AppColors.automaticFocusColor(entries[i].key))
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 20,
+          ..strokeWidth = 20
+          ..strokeCap = StrokeCap.round,
       );
       start += sweep;
     }
@@ -445,7 +447,7 @@ class _HourBars extends CustomPainter {
           ),
           const Radius.circular(2),
         ),
-        Paint()..color = const Color(0xFF3E9F78),
+        Paint()..color = const Color(0xFF188C78),
       );
       if (i % 6 == 0 || i == 23) {
         final text = TextPainter(

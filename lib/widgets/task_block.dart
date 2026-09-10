@@ -56,8 +56,8 @@ class TaskBlock extends StatelessWidget {
     final status = task.statusAt(DateTime.now());
     final original = Color(task.colorValue);
     final color = switch (status) {
-      TaskDisplayStatus.completed => Color.lerp(original, Colors.grey, 0.42)!,
-      TaskDisplayStatus.missed => Color.lerp(original, Colors.grey, 0.58)!,
+      TaskDisplayStatus.completed => Color.lerp(original, Colors.grey, 0.20)!,
+      TaskDisplayStatus.missed => Color.lerp(original, Colors.grey, 0.30)!,
       TaskDisplayStatus.pending => original,
     };
     final foreground = Theme.of(context).colorScheme.onSurface;
@@ -138,21 +138,6 @@ class TaskBlock extends StatelessWidget {
                                             : constraints.maxHeight,
                                     color: foreground,
                                     fontSize: 12,
-                                    trailing: [
-                                      if (actualHeight >= 28 && task.isLocked)
-                                        Icon(
-                                          Icons.lock,
-                                          size: 13,
-                                          color: foreground,
-                                        ),
-                                      if (actualHeight >= 28 &&
-                                          status == TaskDisplayStatus.completed)
-                                        Icon(
-                                          Icons.check_circle,
-                                          size: 13,
-                                          color: foreground,
-                                        ),
-                                    ],
                                   ),
                                 ),
                               ),
@@ -180,6 +165,41 @@ class TaskBlock extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (actualHeight >= 28 &&
+                    (task.isLocked || status == TaskDisplayStatus.completed))
+                  Positioned(
+                    top: actualHeight < 40 ? 1 : 4,
+                    right: showControls ? 33 : 4,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withAlpha(205),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (task.isLocked)
+                              Icon(
+                                Icons.lock_rounded,
+                                key: const ValueKey('task-lock-badge'),
+                                size: actualHeight < 40 ? 9 : 12,
+                                color: foreground.withAlpha(205),
+                              ),
+                            if (status == TaskDisplayStatus.completed)
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: actualHeight < 40 ? 9 : 12,
+                                color: foreground.withAlpha(205),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 if (showControls)
                   Positioned(
                     top: 0,

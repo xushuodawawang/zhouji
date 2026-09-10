@@ -147,6 +147,10 @@ class AppSettingsTable extends Table {
       boolean().withDefault(const Constant(false))();
   TextColumn get focusMusicUri => text().withDefault(const Constant(''))();
   TextColumn get focusMusicName => text().withDefault(const Constant(''))();
+  BoolColumn get focusLockEnabled =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get completionSoundEnabled =>
+      boolean().withDefault(const Constant(true))();
   IntColumn get timelineStartMinutes =>
       integer().withDefault(const Constant(0))();
   IntColumn get timelineEndMinutes =>
@@ -202,7 +206,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -272,6 +276,16 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(
           appSettingsTable,
           appSettingsTable.taskCardOpacity,
+        );
+      }
+      if (from >= 2 && from < 6) {
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.focusLockEnabled,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.completionSoundEnabled,
         );
       }
     },

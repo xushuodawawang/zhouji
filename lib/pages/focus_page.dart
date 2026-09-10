@@ -35,6 +35,7 @@ class FocusPage extends ConsumerWidget {
           s.restoring,
           s.title,
           s.totalSeconds,
+          s.musicPlaying,
         ),
       ),
     );
@@ -206,6 +207,14 @@ class FocusPage extends ConsumerWidget {
                         () => ref.read(focusTimerProvider.notifier).skipBreak(),
                     onReset:
                         () => ref.read(focusTimerProvider.notifier).reset(),
+                    showMusicControl:
+                        settings.focusMusicEnabled &&
+                        settings.focusMusicUri.isNotEmpty,
+                    onToggleMusic:
+                        () =>
+                            ref
+                                .read(focusTimerProvider.notifier)
+                                .toggleMusicPlayback(),
                   ),
                 ],
               ),
@@ -240,6 +249,36 @@ class FocusPage extends ConsumerWidget {
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 SwitchListTile(
+                  title: const Text('专注时锁定手机'),
+                  subtitle: Text(
+                    timer.isActive &&
+                            !timer.isBreak &&
+                            settings.focusLockEnabled
+                        ? '正在使用系统屏幕固定，结束专注后自动解除'
+                        : '开始专注时进入系统屏幕固定，减少切换应用',
+                  ),
+                  secondary: const Icon(Icons.phonelink_lock_rounded),
+                  value: settings.focusLockEnabled,
+                  onChanged:
+                      (value) => ref
+                          .read(settingsRepositoryProvider)
+                          .save(settings.copyWith(focusLockEnabled: value)),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                SwitchListTile(
+                  title: const Text('番茄完成铃声'),
+                  subtitle: const Text('完成一段专注时播放轻柔双音铃声'),
+                  secondary: const Icon(Icons.notifications_active_outlined),
+                  value: settings.completionSoundEnabled,
+                  onChanged:
+                      (value) => ref
+                          .read(settingsRepositoryProvider)
+                          .save(
+                            settings.copyWith(completionSoundEnabled: value),
+                          ),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                SwitchListTile(
                   title: const Text('专注背景音乐'),
                   subtitle: Text(
                     settings.focusMusicName.isEmpty
@@ -250,28 +289,42 @@ class FocusPage extends ConsumerWidget {
                   ),
                   secondary: const Icon(Icons.music_note_rounded),
                   value: settings.focusMusicEnabled,
-                  onChanged:
-                      settings.focusMusicUri.isEmpty
-                          ? null
-                          : (value) => ref
-                              .read(settingsRepositoryProvider)
-                              .save(
-                                settings.copyWith(focusMusicEnabled: value),
-                              ),
+                  onChanged: (value) async {
+                    if (value && settings.focusMusicUri.isEmpty) {
+                      await _pickFocusMusic(context, ref, settings);
+                      return;
+                    }
+                    await ref
+                        .read(settingsRepositoryProvider)
+                        .save(settings.copyWith(focusMusicEnabled: value));
+                  },
                 ),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                    child: TextButton.icon(
-                      onPressed:
-                          timer.isActive
-                              ? null
-                              : () => _pickFocusMusic(context, ref, settings),
-                      icon: const Icon(Icons.audio_file_outlined),
-                      label: Text(
-                        settings.focusMusicUri.isEmpty ? '选择音乐' : '更换音乐',
-                      ),
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 6,
+                      children: [
+                        if (settings.focusMusicUri.isNotEmpty &&
+                            !timer.isActive)
+                          TextButton.icon(
+                            onPressed:
+                                () =>
+                                    _previewFocusMusic(context, ref, settings),
+                            icon: const Icon(Icons.play_circle_outline_rounded),
+                            label: const Text('试听'),
+                          ),
+                        TextButton.icon(
+                          onPressed:
+                              () => _pickFocusMusic(context, ref, settings),
+                          icon: const Icon(Icons.audio_file_outlined),
+                          label: Text(
+                            settings.focusMusicUri.isEmpty ? '选择音乐' : '更换音乐',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -442,6 +495,20 @@ class FocusPage extends ConsumerWidget {
         context,
       ).showSnackBar(SnackBar(content: Text('已选择 ${selection.name}')));
     }
+  }
+
+  Future<void> _previewFocusMusic(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) async {
+    final started = await ref
+        .read(focusMusicServiceProvider)
+        .preview(settings.focusMusicUri);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(started ? '正在试听所选音乐（10 秒）' : '音乐无法播放，请重新选择文件')),
+    );
   }
 
   Future<void> _changePreset(
@@ -711,6 +778,8 @@ class _TimerActions extends StatelessWidget {
     required this.onEarlyEnd,
     required this.onSkip,
     required this.onReset,
+    required this.showMusicControl,
+    required this.onToggleMusic,
   });
 
   final FocusTimerState state;
@@ -721,6 +790,8 @@ class _TimerActions extends StatelessWidget {
   final VoidCallback onEarlyEnd;
   final VoidCallback onSkip;
   final VoidCallback onReset;
+  final bool showMusicControl;
+  final VoidCallback onToggleMusic;
 
   @override
   Widget build(BuildContext context) {
@@ -761,6 +832,16 @@ class _TimerActions extends StatelessWidget {
           OutlinedButton(onPressed: onSkip, child: const Text('跳过休息'))
         else
           FilledButton(onPressed: onComplete, child: const Text('完成当前番茄')),
+        if (!state.isBreak && showMusicControl)
+          OutlinedButton.icon(
+            onPressed: onToggleMusic,
+            icon: Icon(
+              state.musicPlaying
+                  ? Icons.music_off_rounded
+                  : Icons.music_note_rounded,
+            ),
+            label: Text(state.musicPlaying ? '暂停音乐' : '播放音乐'),
+          ),
         TextButton(onPressed: onEarlyEnd, child: const Text('提前结束')),
         IconButton(
           tooltip: '重置计时',

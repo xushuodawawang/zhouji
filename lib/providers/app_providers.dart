@@ -16,6 +16,7 @@ import '../repositories/plan_task_repository.dart';
 import '../repositories/settings_repository.dart';
 import '../services/notification_service.dart';
 import '../services/focus_music_service.dart';
+import '../services/focus_lock_service.dart';
 import '../services/statistics_service.dart';
 import '../utils/date_time_utils.dart';
 import 'focus_timer_controller.dart';
@@ -58,12 +59,17 @@ final focusMusicServiceProvider = Provider<FocusMusicService>(
   (ref) => FocusMusicService(),
 );
 
+final focusLockServiceProvider = Provider<FocusLockService>(
+  (ref) => FocusLockService(),
+);
+
 final focusTimerProvider =
     StateNotifierProvider<FocusTimerController, FocusTimerState>((ref) {
       final controller = FocusTimerController(
         repository: ref.watch(focusRepositoryProvider),
         notifications: ref.watch(notificationServiceProvider),
         music: ref.watch(focusMusicServiceProvider),
+        focusLock: ref.watch(focusLockServiceProvider),
         loadSettings: ref.read(settingsRepositoryProvider).get,
         onTaskFocusCompleted:
             (taskId) =>

@@ -53,6 +53,8 @@ class NotificationService {
           channelDescription: '番茄专注与休息结束提醒',
           importance: Importance.high,
           priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

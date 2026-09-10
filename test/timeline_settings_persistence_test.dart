@@ -7,7 +7,7 @@ import 'package:zhouji/models/app_settings.dart';
 import 'package:zhouji/repositories/settings_repository.dart';
 
 void main() {
-  test('关闭并重新打开应用数据库后恢复缩放和任务卡透明度', () async {
+  test('关闭并重新打开应用数据库后恢复缩放、透明度与专注设置', () async {
     final directory = await Directory.systemTemp.createTemp(
       'zhouji_timeline_settings_',
     );
@@ -24,6 +24,8 @@ void main() {
         detailHourHeight: 72,
         overviewHourHeight: 32,
         taskCardOpacity: 0.45,
+        focusLockEnabled: true,
+        completionSoundEnabled: false,
       ),
     );
     await database.close();
@@ -33,6 +35,8 @@ void main() {
     expect(restored.detailHourHeight, 72);
     expect(restored.overviewHourHeight, 32);
     expect(restored.taskCardOpacity, 0.45);
+    expect(restored.focusLockEnabled, isTrue);
+    expect(restored.completionSoundEnabled, isFalse);
     await database.close();
   });
 }

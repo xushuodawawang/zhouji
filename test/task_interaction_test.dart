@@ -52,6 +52,14 @@ void main() {
       ),
       findsNothing,
     );
+    final lockBadge = find.descendant(
+      of: find.byKey(ValueKey(lockedId)),
+      matching: find.byKey(const ValueKey('task-lock-badge')),
+    );
+    expect(lockBadge, findsOneWidget);
+    final lockRect = tester.getRect(lockBadge);
+    final lockedTitleRect = tester.getRect(find.text('锁定任务'));
+    expect(lockRect.bottom, lessThanOrEqualTo(lockedTitleRect.top));
     expect(
       find.descendant(
         of: find.byKey(ValueKey(normalId)),

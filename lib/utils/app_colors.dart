@@ -9,25 +9,29 @@ abstract final class AppColors {
       Color.lerp(
         Theme.of(context).colorScheme.surface,
         color,
-        Theme.of(context).brightness == Brightness.dark ? 0.32 : 0.22,
+        Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.76,
       )!;
 
   static const taskPalette = <Color>[
-    Color(0xFF80A9A5),
-    Color(0xFF87A7C0),
-    Color(0xFFA39AC3),
-    Color(0xFFC29A9A),
-    Color(0xFFC3AB78),
-    Color(0xFF8FAF8A),
+    Color(0xFFD3E8B7), // 芽绿
+    Color(0xFFECF7E1), // 淡叶绿
+    Color(0xFFCDE7FA), // 晴空蓝
+    Color(0xFFFFF4B6), // 柔日黄
+    Color(0xFFFCE8E6), // 雾粉
+    Color(0xFFFFC6BC), // 珊瑚粉
+    Color(0xFFD6DFEF), // 云灰蓝
+    Color(0xFFA5CDE2), // 冰蓝
+    Color(0xFFC9CEFE), // 薰衣草
+    Color(0xFFCBE8DF), // 薄荷青
   ];
 
   static const focusPalette = <Color>[
-    Color(0xFF247D68),
-    Color(0xFF3F9270),
-    Color(0xFF5AA477),
-    Color(0xFF78B47D),
-    Color(0xFF55958A),
-    Color(0xFF7D9F8B),
+    Color(0xFF007F6B),
+    Color(0xFF29927E),
+    Color(0xFF4A9E8F),
+    Color(0xFF65AF9D),
+    Color(0xFF82BEA9),
+    Color(0xFF9CCBB8),
   ];
 
   static int automaticTaskColor(String title) =>

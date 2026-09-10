@@ -19,6 +19,7 @@ import 'package:zhouji/pages/month_plan_page.dart';
 import 'package:zhouji/pages/statistics_page.dart';
 import 'package:zhouji/providers/app_providers.dart';
 import 'package:zhouji/repositories/plan_task_repository.dart';
+import 'package:zhouji/utils/app_colors.dart';
 import 'package:zhouji/utils/date_time_utils.dart';
 
 const _capture = bool.fromEnvironment('CAPTURE_UI');
@@ -199,14 +200,7 @@ void main() {
               FocusPresetsCompanion.insert(
                 title: entry.$1,
                 minutes: drift.Value(entry.$2),
-                colorValue:
-                    entry.$2 == 60
-                        ? 0xFF5D93B2
-                        : entry.$2 == 30
-                        ? 0xFF709D98
-                        : entry.$2 == 0
-                        ? 0xFF9983B7
-                        : 0xFFAE8D79,
+                colorValue: AppColors.automaticTaskColor(entry.$1),
               ),
             );
       }
@@ -229,7 +223,9 @@ void main() {
             taskDate: AppDateUtils.startOfWeek(now),
             startMinutes: 480 + i * 90,
             endMinutes: 540 + i * 90,
-            colorValue: [0xFF6B8FAD, 0xFF719B87, 0xFFC09A76, 0xFF8C86A8][i],
+            colorValue: AppColors.automaticTaskColor(
+              ['英语阅读', '高等数学', '午后散步', '专业课'][i],
+            ),
           ),
         );
       }
@@ -261,10 +257,18 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('plan-view-day')));
     await _frames(tester);
     await _snapshot(tester, boundary, '06-day');
-    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
-    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
     await tester.tap(find.text('专注').last);
     await _frames(tester);
+    await tester.drag(find.byType(ListView).first, const Offset(0, -1050));
+    await _frames(tester);
+    expect(find.text('专注时锁定手机'), findsOneWidget);
+    expect(find.text('番茄完成铃声'), findsOneWidget);
+    expect(find.text('专注背景音乐'), findsOneWidget);
+    await _snapshot(tester, boundary, '08-focus-tools');
+    await tester.drag(find.byType(ListView).first, const Offset(0, 1600));
+    await _frames(tester);
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
     await _snapshot(tester, boundary, '07-dark-focus');
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());

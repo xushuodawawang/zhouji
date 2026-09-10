@@ -5,6 +5,8 @@ import 'package:zhouji/models/app_settings.dart';
 import 'package:zhouji/models/focus_session.dart';
 import 'package:zhouji/providers/focus_timer_controller.dart';
 import 'package:zhouji/repositories/focus_repository.dart';
+import 'package:zhouji/services/focus_lock_service.dart';
+import 'package:zhouji/services/focus_music_service.dart';
 import 'package:zhouji/services/notification_service.dart';
 
 void main() {
@@ -94,4 +96,95 @@ void main() {
     expect(await repository.loadActiveTimer(), isNull);
     expect(controller.state.phase, TimerPhase.shortBreak);
   });
+
+  test('专注锁定、背景音乐控制与完成铃声按生命周期执行', () async {
+    final music = _RecordingMusicService();
+    final focusLock = _RecordingFocusLockService();
+    final controller = FocusTimerController(
+      repository: repository,
+      notifications: NotificationService(),
+      music: music,
+      focusLock: focusLock,
+      settings: const AppSettings(
+        pomodoroFocusMinutes: 1,
+        focusLockEnabled: true,
+        focusMusicEnabled: true,
+        focusMusicUri: 'content://local/study.mp3',
+        completionSoundEnabled: true,
+      ),
+    );
+    addTearDown(controller.dispose);
+    while (controller.state.restoring) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+
+    await controller.start();
+    expect(focusLock.activations, 1);
+    expect(music.plays, 1);
+    expect(controller.state.musicPlaying, isTrue);
+
+    await controller.toggleMusicPlayback();
+    expect(music.pauses, 1);
+    expect(controller.state.musicPlaying, isFalse);
+    await controller.toggleMusicPlayback();
+    expect(music.resumes, 1);
+    expect(controller.state.musicPlaying, isTrue);
+
+    await controller.completeCurrent();
+    expect(focusLock.deactivations, 1);
+    expect(music.stops, 1);
+    expect(music.chimes, 1);
+    expect(controller.state.phase, TimerPhase.shortBreak);
+  });
+}
+
+class _RecordingMusicService extends FocusMusicService {
+  int plays = 0;
+  int pauses = 0;
+  int resumes = 0;
+  int stops = 0;
+  int chimes = 0;
+
+  @override
+  Future<bool> play(String uri) async {
+    plays++;
+    return true;
+  }
+
+  @override
+  Future<void> pause() async {
+    pauses++;
+  }
+
+  @override
+  Future<bool> resume() async {
+    resumes++;
+    return true;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+  }
+
+  @override
+  Future<void> playCompletionSound() async {
+    chimes++;
+  }
+}
+
+class _RecordingFocusLockService extends FocusLockService {
+  int activations = 0;
+  int deactivations = 0;
+
+  @override
+  Future<bool> activate() async {
+    activations++;
+    return true;
+  }
+
+  @override
+  Future<void> deactivate() async {
+    deactivations++;
+  }
 }

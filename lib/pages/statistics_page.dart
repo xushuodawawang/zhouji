@@ -50,7 +50,11 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                         const Color(0xFF15382E),
                         Theme.of(context).colorScheme.surface,
                       ]
-                      : [const Color(0xFFB9E4D5), const Color(0xFFF3F7F1)],
+                      : [
+                        const Color(0xFFD3E8B7),
+                        const Color(0xFFECF7E1),
+                        const Color(0xFFF8FAF6),
+                      ],
             ),
           ),
           child: ListView(
@@ -377,15 +381,17 @@ class _DonutPainter extends CustomPainter {
     final rect = Offset.zero & size;
     for (final item in items) {
       final sweep = math.pi * 2 * item.minutes / total;
+      final gap = items.length > 1 ? math.min(0.035, sweep * 0.16) : 0.0;
       canvas.drawArc(
         rect.deflate(10),
-        start,
-        sweep,
+        start + gap / 2,
+        sweep - gap,
         false,
         Paint()
           ..color = Color(item.colorValue)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 18,
+          ..strokeWidth = 18
+          ..strokeCap = StrokeCap.round,
       );
       start += sweep;
     }

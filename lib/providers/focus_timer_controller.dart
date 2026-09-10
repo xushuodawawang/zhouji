@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_settings.dart';
 import '../models/focus_session.dart';
 import '../repositories/focus_repository.dart';
+import '../services/focus_lock_service.dart';
 import '../services/notification_service.dart';
 import '../services/focus_music_service.dart';
 
@@ -24,6 +25,7 @@ class FocusTimerState {
     this.expectedEndAt,
     this.restoring = true,
     this.title = '',
+    this.musicPlaying = false,
   });
 
   final FocusTimerStatus status;
@@ -37,6 +39,7 @@ class FocusTimerState {
   final DateTime? expectedEndAt;
   final bool restoring;
   final String title;
+  final bool musicPlaying;
   bool get isStopwatch => totalSeconds == 0 && !isBreak;
 
   bool get isBreak => phase != TimerPhase.focus;
@@ -60,6 +63,7 @@ class FocusTimerState {
     bool clearExpectedEndAt = false,
     bool? restoring,
     String? title,
+    bool? musicPlaying,
   }) => FocusTimerState(
     status: status ?? this.status,
     phase: phase ?? this.phase,
@@ -73,6 +77,7 @@ class FocusTimerState {
         clearExpectedEndAt ? null : expectedEndAt ?? this.expectedEndAt,
     restoring: restoring ?? this.restoring,
     title: title ?? this.title,
+    musicPlaying: musicPlaying ?? this.musicPlaying,
   );
 }
 
@@ -81,12 +86,14 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     required FocusRepository repository,
     required NotificationService notifications,
     FocusMusicService? music,
+    FocusLockService? focusLock,
     Future<void> Function(int taskId)? onTaskFocusCompleted,
     required AppSettings settings,
     Future<AppSettings> Function()? loadSettings,
   }) : _repository = repository,
        _notifications = notifications,
        _music = music ?? FocusMusicService(),
+       _focusLock = focusLock ?? FocusLockService(),
        _onTaskFocusCompleted = onTaskFocusCompleted ?? ((_) async {}),
        _settings = settings,
        _loadSettings = loadSettings,
@@ -102,11 +109,13 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
   final FocusRepository _repository;
   final NotificationService _notifications;
   final FocusMusicService _music;
+  final FocusLockService _focusLock;
   final Future<void> Function(int taskId) _onTaskFocusCompleted;
   AppSettings _settings;
   final Future<AppSettings> Function()? _loadSettings;
   Timer? _ticker;
   bool _completing = false;
+  bool _musicManuallyPaused = false;
   int _operation = 0;
 
   static int remainingAt(ActiveTimer timer, DateTime now) {
@@ -151,7 +160,10 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     } else if (timer.isRunning) {
       _startTicker();
       if (!state.isBreak && _settings.focusMusicEnabled) {
-        await _music.play(_settings.focusMusicUri);
+        await _startBackgroundMusic();
+      }
+      if (!state.isBreak && _settings.focusLockEnabled) {
+        await _focusLock.activate();
       }
     }
   }
@@ -162,14 +174,24 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     final musicChanged =
         settings.focusMusicEnabled != _settings.focusMusicEnabled ||
         settings.focusMusicUri != _settings.focusMusicUri;
+    final focusLockChanged =
+        settings.focusLockEnabled != _settings.focusLockEnabled;
     _settings = settings;
     if (musicChanged &&
         state.status == FocusTimerStatus.running &&
         !state.isBreak) {
-      if (settings.focusMusicEnabled) {
-        _music.play(settings.focusMusicUri);
+      _musicManuallyPaused = false;
+      if (settings.focusMusicEnabled && settings.focusMusicUri.isNotEmpty) {
+        unawaited(_startBackgroundMusic());
       } else {
-        _music.stop();
+        unawaited(_stopMusic());
+      }
+    }
+    if (focusLockChanged) {
+      if (!settings.focusLockEnabled) {
+        unawaited(_focusLock.deactivate());
+      } else if (state.isActive && !state.isBreak) {
+        unawaited(_focusLock.activate());
       }
     }
     if (durationChanged &&
@@ -219,6 +241,8 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
 
   Future<void> start() async {
     if (state.restoring || state.status == FocusTimerStatus.running) return;
+    final wasPaused = state.status == FocusTimerStatus.paused;
+    if (!wasPaused) _musicManuallyPaused = false;
     final operation = ++_operation;
     final now = DateTime.now();
     final expected =
@@ -241,10 +265,15 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
       );
     }
     if (operation != _operation) return;
+    if (!state.isBreak && _settings.focusLockEnabled) {
+      await _focusLock.activate();
+    }
+    if (operation != _operation) return;
     if (!state.isBreak &&
         _settings.focusMusicEnabled &&
-        _settings.focusMusicUri.isNotEmpty) {
-      await _music.play(_settings.focusMusicUri);
+        _settings.focusMusicUri.isNotEmpty &&
+        !_musicManuallyPaused) {
+      await _startBackgroundMusic(resume: wasPaused);
     }
     if (operation == _operation) _startTicker();
   }
@@ -263,9 +292,10 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
       status: FocusTimerStatus.paused,
       remainingSeconds: remaining,
       expectedEndAt: DateTime.now().add(Duration(seconds: remaining)),
+      musicPlaying: false,
     );
     await _notifications.cancelTimer();
-    await _music.stop();
+    await _music.pause();
     await _persist();
   }
 
@@ -279,6 +309,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     if (!state.isBreak) return;
     await _notifications.cancelTimer();
     await _music.stop();
+    await _focusLock.deactivate();
     await _repository.clearActiveTimer();
     _ticker?.cancel();
     _setReadyFocus();
@@ -288,6 +319,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     _operation++;
     await _notifications.cancelTimer();
     await _music.stop();
+    await _focusLock.deactivate();
     await _repository.clearActiveTimer();
     _ticker?.cancel();
     state = FocusTimerState(
@@ -326,6 +358,10 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
       await _music.stop();
       final wasFocus = state.phase == TimerPhase.focus;
       final wasStopwatch = state.isStopwatch;
+      if (wasFocus) await _focusLock.deactivate();
+      if (wasFocus && completed && _settings.completionSoundEnabled) {
+        await _music.playCompletionSound();
+      }
       if (wasFocus && state.startedAt != null) {
         final usedSeconds = math.max(
           0,
@@ -384,6 +420,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
   }
 
   void _setReadyFocus() {
+    _musicManuallyPaused = false;
     final seconds = _settings.pomodoroFocusMinutes * 60;
     state = FocusTimerState(
       remainingSeconds: seconds,
@@ -398,6 +435,36 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     TimerPhase.shortBreak => _settings.shortBreakMinutes,
     TimerPhase.longBreak => _settings.longBreakMinutes,
   };
+
+  Future<void> toggleMusicPlayback() async {
+    if (state.status != FocusTimerStatus.running || state.isBreak) return;
+    if (!_settings.focusMusicEnabled || _settings.focusMusicUri.isEmpty) return;
+    if (state.musicPlaying) {
+      _musicManuallyPaused = true;
+      await _music.pause();
+      if (mounted) state = state.copyWith(musicPlaying: false);
+      return;
+    }
+    _musicManuallyPaused = false;
+    await _startBackgroundMusic(resume: true);
+  }
+
+  Future<void> _startBackgroundMusic({bool resume = false}) async {
+    if (state.status != FocusTimerStatus.running || state.isBreak) return;
+    var playing = resume && await _music.resume();
+    if (!playing) playing = await _music.play(_settings.focusMusicUri);
+    if (!mounted) return;
+    if (state.status != FocusTimerStatus.running || state.isBreak) {
+      if (playing) await _music.stop();
+      return;
+    }
+    state = state.copyWith(musicPlaying: playing);
+  }
+
+  Future<void> _stopMusic() async {
+    await _music.stop();
+    if (mounted) state = state.copyWith(musicPlaying: false);
+  }
 
   Future<void> _persist() => _repository.saveActiveTimer(
     ActiveTimer(

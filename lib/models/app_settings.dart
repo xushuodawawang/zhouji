@@ -18,6 +18,8 @@ class AppSettings {
     this.focusMusicEnabled = false,
     this.focusMusicUri = '',
     this.focusMusicName = '',
+    this.focusLockEnabled = false,
+    this.completionSoundEnabled = true,
     this.timelineStartMinutes = 0,
     this.timelineEndMinutes = 24 * 60,
     this.autoColorEnabled = true,
@@ -38,6 +40,8 @@ class AppSettings {
   final bool focusMusicEnabled;
   final String focusMusicUri;
   final String focusMusicName;
+  final bool focusLockEnabled;
+  final bool completionSoundEnabled;
   final int timelineStartMinutes;
   final int timelineEndMinutes;
   final bool autoColorEnabled;
@@ -58,6 +62,8 @@ class AppSettings {
     bool? focusMusicEnabled,
     String? focusMusicUri,
     String? focusMusicName,
+    bool? focusLockEnabled,
+    bool? completionSoundEnabled,
     int? timelineStartMinutes,
     int? timelineEndMinutes,
     bool? autoColorEnabled,
@@ -78,6 +84,9 @@ class AppSettings {
     focusMusicEnabled: focusMusicEnabled ?? this.focusMusicEnabled,
     focusMusicUri: focusMusicUri ?? this.focusMusicUri,
     focusMusicName: focusMusicName ?? this.focusMusicName,
+    focusLockEnabled: focusLockEnabled ?? this.focusLockEnabled,
+    completionSoundEnabled:
+        completionSoundEnabled ?? this.completionSoundEnabled,
     timelineStartMinutes: timelineStartMinutes ?? this.timelineStartMinutes,
     timelineEndMinutes: timelineEndMinutes ?? this.timelineEndMinutes,
     autoColorEnabled: autoColorEnabled ?? this.autoColorEnabled,
