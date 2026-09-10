@@ -205,7 +205,7 @@ void main() {
             );
       }
       for (var i = 0; i < 3; i++) {
-        final start = DateTime(now.year, now.month, now.day - i, 8);
+        final start = DateTime(now.year, now.month, now.day, 8 + i * 2);
         await FocusRepository(database).addSession(
           startedAt: start,
           endedAt: start.add(Duration(minutes: 60 + i * 10)),
@@ -264,6 +264,7 @@ void main() {
     expect(find.text('专注时锁定手机'), findsOneWidget);
     expect(find.text('番茄完成铃声'), findsOneWidget);
     expect(find.text('专注背景音乐'), findsOneWidget);
+    expect(find.text('导入本地歌单'), findsOneWidget);
     await _snapshot(tester, boundary, '08-focus-tools');
     await tester.drag(find.byType(ListView).first, const Offset(0, 1600));
     await _frames(tester);

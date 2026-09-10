@@ -18,6 +18,7 @@ class AppSettings {
     this.focusMusicEnabled = false,
     this.focusMusicUri = '',
     this.focusMusicName = '',
+    this.focusPlaylistJson = '',
     this.focusLockEnabled = false,
     this.completionSoundEnabled = true,
     this.timelineStartMinutes = 0,
@@ -40,6 +41,7 @@ class AppSettings {
   final bool focusMusicEnabled;
   final String focusMusicUri;
   final String focusMusicName;
+  final String focusPlaylistJson;
   final bool focusLockEnabled;
   final bool completionSoundEnabled;
   final int timelineStartMinutes;
@@ -62,6 +64,7 @@ class AppSettings {
     bool? focusMusicEnabled,
     String? focusMusicUri,
     String? focusMusicName,
+    String? focusPlaylistJson,
     bool? focusLockEnabled,
     bool? completionSoundEnabled,
     int? timelineStartMinutes,
@@ -84,6 +87,7 @@ class AppSettings {
     focusMusicEnabled: focusMusicEnabled ?? this.focusMusicEnabled,
     focusMusicUri: focusMusicUri ?? this.focusMusicUri,
     focusMusicName: focusMusicName ?? this.focusMusicName,
+    focusPlaylistJson: focusPlaylistJson ?? this.focusPlaylistJson,
     focusLockEnabled: focusLockEnabled ?? this.focusLockEnabled,
     completionSoundEnabled:
         completionSoundEnabled ?? this.completionSoundEnabled,

@@ -136,10 +136,45 @@ void main() {
     expect(music.chimes, 1);
     expect(controller.state.phase, TimerPhase.shortBreak);
   });
+
+  test('多首背景音乐按歌单交给原生播放器', () async {
+    final music = _RecordingMusicService();
+    final controller = FocusTimerController(
+      repository: repository,
+      notifications: NotificationService(),
+      music: music,
+      settings: AppSettings(
+        pomodoroFocusMinutes: 1,
+        focusMusicEnabled: true,
+        focusMusicUri: 'content://local/one.mp3',
+        focusPlaylistJson: FocusMusicService.encodePlaylist(const [
+          FocusMusicSelection(uri: 'content://local/one.mp3', name: 'one.mp3'),
+          FocusMusicSelection(
+            uri: 'content://local/two.flac',
+            name: 'two.flac',
+          ),
+        ]),
+      ),
+    );
+    addTearDown(controller.dispose);
+    while (controller.state.restoring) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+
+    await controller.start();
+    expect(music.playlists, 1);
+    expect(music.lastPlaylist, [
+      'content://local/one.mp3',
+      'content://local/two.flac',
+    ]);
+    expect(music.plays, 0);
+  });
 }
 
 class _RecordingMusicService extends FocusMusicService {
   int plays = 0;
+  int playlists = 0;
+  List<String> lastPlaylist = const [];
   int pauses = 0;
   int resumes = 0;
   int stops = 0;
@@ -148,6 +183,13 @@ class _RecordingMusicService extends FocusMusicService {
   @override
   Future<bool> play(String uri) async {
     plays++;
+    return true;
+  }
+
+  @override
+  Future<bool> playPlaylist(List<String> uris) async {
+    playlists++;
+    lastPlaylist = List.of(uris);
     return true;
   }
 

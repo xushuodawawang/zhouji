@@ -13,25 +13,31 @@ abstract final class AppColors {
       )!;
 
   static const taskPalette = <Color>[
-    Color(0xFFD3E8B7), // 芽绿
-    Color(0xFFECF7E1), // 淡叶绿
-    Color(0xFFCDE7FA), // 晴空蓝
-    Color(0xFFFFF4B6), // 柔日黄
-    Color(0xFFFCE8E6), // 雾粉
-    Color(0xFFFFC6BC), // 珊瑚粉
-    Color(0xFFD6DFEF), // 云灰蓝
-    Color(0xFFA5CDE2), // 冰蓝
-    Color(0xFFC9CEFE), // 薰衣草
-    Color(0xFFCBE8DF), // 薄荷青
+    Color(0xFF457635), // 森林绿
+    Color(0xFF6B9136), // 橄榄绿
+    Color(0xFF97B365), // 嫩叶绿
+    Color(0xFFDFD352), // 油画黄
+    Color(0xFFF8EBBD), // 奶油黄
+    Color(0xFFB1C5C9), // 雾霾蓝
+    Color(0xFFDFC5BF), // 灰豆粉
+    Color(0xFF68A8CC), // 湖蓝
+    Color(0xFF9A86C8), // 鸢尾紫
+    Color(0xFFD98272), // 珊瑚红
+    Color(0xFFD6A24F), // 琥珀橙
+    Color(0xFF62A58E), // 青瓷绿
   ];
 
   static const focusPalette = <Color>[
-    Color(0xFF007F6B),
-    Color(0xFF29927E),
-    Color(0xFF4A9E8F),
-    Color(0xFF65AF9D),
-    Color(0xFF82BEA9),
-    Color(0xFF9CCBB8),
+    Color(0xFF457635),
+    Color(0xFFDFD352),
+    Color(0xFF68A8CC),
+    Color(0xFFD98272),
+    Color(0xFF9A86C8),
+    Color(0xFF6B9136),
+    Color(0xFFB1C5C9),
+    Color(0xFFD6A24F),
+    Color(0xFF62A58E),
+    Color(0xFFDFC5BF),
   ];
 
   static int automaticTaskColor(String title) =>
@@ -39,6 +45,9 @@ abstract final class AppColors {
 
   static int automaticFocusColor(String title) =>
       focusPalette[_stableColorIndex(title, focusPalette.length)].toARGB32();
+
+  static int focusChartColor(int index) =>
+      focusPalette[index % focusPalette.length].toARGB32();
 
   static int _stableColorIndex(String title, int length) {
     var hash = 0;

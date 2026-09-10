@@ -147,6 +147,7 @@ class AppSettingsTable extends Table {
       boolean().withDefault(const Constant(false))();
   TextColumn get focusMusicUri => text().withDefault(const Constant(''))();
   TextColumn get focusMusicName => text().withDefault(const Constant(''))();
+  TextColumn get focusPlaylistJson => text().withDefault(const Constant(''))();
   BoolColumn get focusLockEnabled =>
       boolean().withDefault(const Constant(false))();
   BoolColumn get completionSoundEnabled =>
@@ -206,7 +207,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -286,6 +287,12 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(
           appSettingsTable,
           appSettingsTable.completionSoundEnabled,
+        );
+      }
+      if (from >= 2 && from < 7) {
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.focusPlaylistJson,
         );
       }
     },

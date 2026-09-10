@@ -8,6 +8,7 @@ import '../models/focus_session.dart';
 import '../models/plan_task.dart';
 import '../providers/app_providers.dart';
 import '../providers/focus_timer_controller.dart';
+import '../services/focus_music_service.dart';
 import '../utils/date_time_utils.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/focus_preset_cards.dart';
@@ -42,6 +43,9 @@ class FocusPage extends ConsumerWidget {
     final timer = ref.read(focusTimerProvider);
     final settings =
         ref.watch(appSettingsProvider).valueOrNull ?? const AppSettings();
+    final focusPlaylist = FocusMusicService.decodePlaylist(
+      settings.focusPlaylistJson,
+    );
     final tasks =
         ref.watch(focusCandidateTasksProvider).valueOrNull ?? const [];
     final sessions =
@@ -281,7 +285,9 @@ class FocusPage extends ConsumerWidget {
                 SwitchListTile(
                   title: const Text('专注背景音乐'),
                   subtitle: Text(
-                    settings.focusMusicName.isEmpty
+                    focusPlaylist.length > 1
+                        ? '本地歌单 · ${focusPlaylist.length} 首（顺序循环）'
+                        : settings.focusMusicName.isEmpty
                         ? '选择手机里的音频，专注时循环播放'
                         : settings.focusMusicName,
                     maxLines: 1,
@@ -324,7 +330,23 @@ class FocusPage extends ConsumerWidget {
                             settings.focusMusicUri.isEmpty ? '选择音乐' : '更换音乐',
                           ),
                         ),
+                        TextButton.icon(
+                          onPressed:
+                              () => _pickFocusPlaylist(context, ref, settings),
+                          icon: const Icon(Icons.playlist_add_rounded),
+                          label: const Text('导入本地歌单'),
+                        ),
                       ],
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '支持一次选择多首 MP3、FLAC、AAC 等可访问音频；网易云、QQ 音乐的在线歌单需要平台授权。',
+                      style: TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
@@ -487,6 +509,7 @@ class FocusPage extends ConsumerWidget {
           settings.copyWith(
             focusMusicUri: selection.uri,
             focusMusicName: selection.name,
+            focusPlaylistJson: '',
             focusMusicEnabled: true,
           ),
         );
@@ -494,6 +517,30 @@ class FocusPage extends ConsumerWidget {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('已选择 ${selection.name}')));
+    }
+  }
+
+  Future<void> _pickFocusPlaylist(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) async {
+    final playlist = await ref.read(focusMusicServiceProvider).pickPlaylist();
+    if (playlist.isEmpty) return;
+    await ref
+        .read(settingsRepositoryProvider)
+        .save(
+          settings.copyWith(
+            focusMusicUri: playlist.first.uri,
+            focusMusicName: playlist.first.name,
+            focusPlaylistJson: FocusMusicService.encodePlaylist(playlist),
+            focusMusicEnabled: true,
+          ),
+        );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已导入 ${playlist.length} 首音乐，将按顺序循环播放')),
+      );
     }
   }
 

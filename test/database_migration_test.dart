@@ -74,9 +74,10 @@ void main() {
     expect((await database.getSettings()).taskCardOpacity, 0.72);
     expect((await database.getSettings()).focusLockEnabled, isFalse);
     expect((await database.getSettings()).completionSoundEnabled, isTrue);
+    expect((await database.getSettings()).focusPlaylistJson, isEmpty);
   });
 
-  for (final oldVersion in [2, 3, 4, 5]) {
+  for (final oldVersion in [2, 3, 4, 5, 6]) {
     test('V$oldVersion 升级后保留任务与原设置，并补齐专注、缩放和日期索引', () async {
       final sqlite = sqlite3.openInMemory();
       sqlite.execute('''
@@ -204,6 +205,14 @@ void main() {
           'ALTER TABLE app_settings_table ADD COLUMN task_card_opacity REAL NOT NULL DEFAULT 0.72',
         );
       }
+      if (oldVersion >= 6) {
+        sqlite.execute(
+          'ALTER TABLE app_settings_table ADD COLUMN focus_lock_enabled INTEGER NOT NULL DEFAULT 0',
+        );
+        sqlite.execute(
+          'ALTER TABLE app_settings_table ADD COLUMN completion_sound_enabled INTEGER NOT NULL DEFAULT 1',
+        );
+      }
       sqlite.execute('PRAGMA user_version = $oldVersion');
       sqlite.execute('''CREATE TABLE active_timers (
       id INTEGER NOT NULL PRIMARY KEY, mode TEXT NOT NULL, phase TEXT NOT NULL,
@@ -236,6 +245,7 @@ void main() {
       expect(settings.taskCardOpacity, 0.72);
       expect(settings.focusLockEnabled, isFalse);
       expect(settings.completionSoundEnabled, isTrue);
+      expect(settings.focusPlaylistJson, isEmpty);
       expect(await database.select(database.focusPresets).get(), isEmpty);
       expect(settings.weekViewMode, 'overview');
       expect(settings.detailHourHeight, 56);

@@ -250,11 +250,7 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
                                 Icon(
                                   Icons.circle,
                                   size: 10,
-                                  color: Color(
-                                    AppColors.automaticFocusColor(
-                                      entries[i].key,
-                                    ),
-                                  ),
+                                  color: Color(AppColors.focusChartColor(i)),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -414,7 +410,7 @@ class _FocusRing extends CustomPainter {
         sweep - gap,
         false,
         Paint()
-          ..color = Color(AppColors.automaticFocusColor(entries[i].key))
+          ..color = Color(AppColors.focusChartColor(i))
           ..style = PaintingStyle.stroke
           ..strokeWidth = 20
           ..strokeCap = StrokeCap.round,

@@ -19,6 +19,9 @@ class MainActivity : FlutterFragmentActivity() {
     private var player: MediaPlayer? = null
     private var chimePlayer: MediaPlayer? = null
     private var shouldPlayMusic = false
+    private var previewing = false
+    private var musicQueue: List<Uri> = emptyList()
+    private var musicQueueIndex = 0
     private val mainHandler = Handler(Looper.getMainLooper())
     private var pendingResult: MethodChannel.Result? = null
 
@@ -31,20 +34,15 @@ class MainActivity : FlutterFragmentActivity() {
             result?.success(null)
             return@registerForActivityResult
         }
-        try {
-            contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-        } catch (_: SecurityException) {
-            // Some document providers grant a durable URI without this call.
-        }
-        var name = "自定义音乐"
-        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-            ?.use { cursor ->
-                if (cursor.moveToFirst()) name = cursor.getString(0) ?: name
-            }
-        result?.success(mapOf("uri" to uri.toString(), "name" to name))
+        result?.success(describeAudio(uri))
+    }
+
+    private val playlistPicker = registerForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        val result = pendingResult
+        pendingResult = null
+        result?.success(uris.map(::describeAudio))
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -60,8 +58,17 @@ class MainActivity : FlutterFragmentActivity() {
                             audioPicker.launch(arrayOf("audio/*"))
                         }
                     }
-                    "play" -> playAudio(call.argument("uri"), true, result)
-                    "preview" -> playAudio(call.argument("uri"), false, result)
+                    "pickPlaylist" -> {
+                        if (pendingResult != null) {
+                            result.error("picker_busy", "音乐选择器已经打开", null)
+                        } else {
+                            pendingResult = result
+                            playlistPicker.launch(arrayOf("audio/*"))
+                        }
+                    }
+                    "play" -> playAudio(call.argument("uri"), false, result)
+                    "playPlaylist" -> playPlaylist(call.argument("uris"), result)
+                    "preview" -> playAudio(call.argument("uri"), true, result)
                     "pause" -> {
                         try {
                             shouldPlayMusic = false
@@ -90,9 +97,7 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                     }
                     "stop" -> {
-                        shouldPlayMusic = false
-                        player?.release()
-                        player = null
+                        stopMusic()
                         result.success(null)
                     }
                     "playCompletionSound" -> playCompletionSound(result)
@@ -129,57 +134,112 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
-    private fun playAudio(uri: String?, looping: Boolean, result: MethodChannel.Result) {
+    private fun describeAudio(uri: Uri): Map<String, String> {
+        try {
+            contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (_: SecurityException) {
+            // Some document providers grant a durable URI without this call.
+        }
+        var name = "自定义音乐"
+        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { cursor ->
+                if (cursor.moveToFirst()) name = cursor.getString(0) ?: name
+            }
+        return mapOf("uri" to uri.toString(), "name" to name)
+    }
+
+    private fun playAudio(uri: String?, preview: Boolean, result: MethodChannel.Result) {
         if (uri.isNullOrBlank()) {
             result.error("missing_uri", "没有选择音乐", null)
             return
         }
+        startPlayback(listOf(uri), preview, result)
+    }
+
+    private fun playPlaylist(uris: List<String>?, result: MethodChannel.Result) {
+        val playable = uris.orEmpty().filter { it.isNotBlank() }
+        if (playable.isEmpty()) {
+            result.error("missing_uri", "歌单中没有可播放的音乐", null)
+            return
+        }
+        startPlayback(playable, false, result)
+    }
+
+    private fun startPlayback(
+        uris: List<String>,
+        preview: Boolean,
+        result: MethodChannel.Result
+    ) {
         try {
+            stopMusic()
+            musicQueue = uris.map(Uri::parse)
+            musicQueueIndex = 0
+            previewing = preview
             shouldPlayMusic = true
-            player?.release()
-            val nextPlayer = MediaPlayer().apply {
+            prepareCurrentTrack()
+            result.success(null)
+        } catch (error: Exception) {
+            stopMusic()
+            result.error("play_failed", error.message, null)
+        }
+    }
+
+    private fun prepareCurrentTrack() {
+        if (musicQueue.isEmpty()) return
+        val nextPlayer = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
-                setDataSource(this@MainActivity, Uri.parse(uri))
-                isLooping = looping
+                setDataSource(this@MainActivity, musicQueue[musicQueueIndex])
+                isLooping = !previewing && musicQueue.size == 1
                 setVolume(0.45f, 0.45f)
                 setOnPreparedListener {
                     if (player === it && shouldPlayMusic) it.start()
                 }
                 setOnCompletionListener { finished ->
                     if (player === finished) player = null
-                    shouldPlayMusic = false
                     finished.release()
+                    if (previewing) {
+                        shouldPlayMusic = false
+                        musicQueue = emptyList()
+                    } else if (shouldPlayMusic && musicQueue.isNotEmpty()) {
+                        musicQueueIndex = (musicQueueIndex + 1) % musicQueue.size
+                        try {
+                            prepareCurrentTrack()
+                        } catch (_: Exception) {
+                            stopMusic()
+                        }
+                    }
                 }
                 setOnErrorListener { failed, _, _ ->
                     if (player === failed) player = null
-                    shouldPlayMusic = false
                     failed.release()
+                    stopMusic()
                     true
                 }
                 prepareAsync()
             }
-            player = nextPlayer
-            if (!looping) {
-                mainHandler.postDelayed({
-                    if (player === nextPlayer) {
-                        player = null
-                        shouldPlayMusic = false
-                        nextPlayer.release()
-                    }
-                }, 10_000)
-            }
-            result.success(null)
-        } catch (error: Exception) {
-            shouldPlayMusic = false
-            player?.release()
-            player = null
-            result.error("play_failed", error.message, null)
+        player = nextPlayer
+        if (previewing) {
+            mainHandler.postDelayed({
+                if (player === nextPlayer) stopMusic()
+            }, 10_000)
         }
+    }
+
+    private fun stopMusic() {
+        shouldPlayMusic = false
+        previewing = false
+        musicQueue = emptyList()
+        musicQueueIndex = 0
+        player?.release()
+        player = null
     }
 
     private fun playCompletionSound(result: MethodChannel.Result) {
@@ -212,9 +272,7 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun onDestroy() {
-        shouldPlayMusic = false
-        player?.release()
-        player = null
+        stopMusic()
         chimePlayer?.release()
         chimePlayer = null
         super.onDestroy()

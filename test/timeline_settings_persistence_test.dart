@@ -26,6 +26,11 @@ void main() {
         taskCardOpacity: 0.45,
         focusLockEnabled: true,
         completionSoundEnabled: false,
+        focusMusicUri: 'content://music/one',
+        focusMusicName: 'one.mp3',
+        focusPlaylistJson:
+            '[{"uri":"content://music/one","name":"one.mp3"},'
+            '{"uri":"content://music/two","name":"two.flac"}]',
       ),
     );
     await database.close();
@@ -37,6 +42,7 @@ void main() {
     expect(restored.taskCardOpacity, 0.45);
     expect(restored.focusLockEnabled, isTrue);
     expect(restored.completionSoundEnabled, isFalse);
+    expect(restored.focusPlaylistJson, contains('two.flac'));
     await database.close();
   });
 }

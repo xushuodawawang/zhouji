@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 
 class FocusMusicSelection {
@@ -26,6 +28,56 @@ class FocusMusicService {
     }
   }
 
+  Future<List<FocusMusicSelection>> pickPlaylist() async {
+    try {
+      final result = await _channel.invokeListMethod<dynamic>('pickPlaylist');
+      if (result == null) return const [];
+      return result
+          .whereType<Map<dynamic, dynamic>>()
+          .map(
+            (item) => FocusMusicSelection(
+              uri: item['uri'] as String? ?? '',
+              name: item['name'] as String? ?? '自定义音乐',
+            ),
+          )
+          .where((item) => item.uri.isNotEmpty)
+          .toList(growable: false);
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
+
+  static String encodePlaylist(List<FocusMusicSelection> playlist) {
+    if (playlist.isEmpty) return '';
+    return jsonEncode([
+      for (final item in playlist) {'uri': item.uri, 'name': item.name},
+    ]);
+  }
+
+  static List<FocusMusicSelection> decodePlaylist(String source) {
+    if (source.trim().isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(source);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map(
+            (item) => FocusMusicSelection(
+              uri: item['uri'] as String? ?? '',
+              name: item['name'] as String? ?? '自定义音乐',
+            ),
+          )
+          .where((item) => item.uri.isNotEmpty)
+          .toList(growable: false);
+    } on FormatException {
+      return const [];
+    } on TypeError {
+      return const [];
+    }
+  }
+
   Future<bool> play(String uri) async {
     if (uri.isEmpty) return false;
     try {
@@ -36,6 +88,21 @@ class FocusMusicService {
       return false;
     } on MissingPluginException {
       // Widget and repository tests run without an Android host.
+      return false;
+    }
+  }
+
+  Future<bool> playPlaylist(List<String> uris) async {
+    final playable = uris
+        .where((uri) => uri.isNotEmpty)
+        .toList(growable: false);
+    if (playable.isEmpty) return false;
+    try {
+      await _channel.invokeMethod<void>('playPlaylist', {'uris': playable});
+      return true;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
       return false;
     }
   }

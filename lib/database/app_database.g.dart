@@ -4483,6 +4483,19 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _focusPlaylistJsonMeta = const VerificationMeta(
+    'focusPlaylistJson',
+  );
+  @override
+  late final GeneratedColumn<String> focusPlaylistJson =
+      GeneratedColumn<String>(
+        'focus_playlist_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _focusLockEnabledMeta = const VerificationMeta(
     'focusLockEnabled',
   );
@@ -4590,6 +4603,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     focusMusicEnabled,
     focusMusicUri,
     focusMusicName,
+    focusPlaylistJson,
     focusLockEnabled,
     completionSoundEnabled,
     timelineStartMinutes,
@@ -4733,6 +4747,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         focusMusicName.isAcceptableOrUnknown(
           data['focus_music_name']!,
           _focusMusicNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focus_playlist_json')) {
+      context.handle(
+        _focusPlaylistJsonMeta,
+        focusPlaylistJson.isAcceptableOrUnknown(
+          data['focus_playlist_json']!,
+          _focusPlaylistJsonMeta,
         ),
       );
     }
@@ -4882,6 +4905,11 @@ class $AppSettingsTableTable extends AppSettingsTable
             DriftSqlType.string,
             data['${effectivePrefix}focus_music_name'],
           )!,
+      focusPlaylistJson:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}focus_playlist_json'],
+          )!,
       focusLockEnabled:
           attachedDatabase.typeMapping.read(
             DriftSqlType.bool,
@@ -4942,6 +4970,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final bool focusMusicEnabled;
   final String focusMusicUri;
   final String focusMusicName;
+  final String focusPlaylistJson;
   final bool focusLockEnabled;
   final bool completionSoundEnabled;
   final int timelineStartMinutes;
@@ -4965,6 +4994,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.focusMusicEnabled,
     required this.focusMusicUri,
     required this.focusMusicName,
+    required this.focusPlaylistJson,
     required this.focusLockEnabled,
     required this.completionSoundEnabled,
     required this.timelineStartMinutes,
@@ -4993,6 +5023,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['focus_music_enabled'] = Variable<bool>(focusMusicEnabled);
     map['focus_music_uri'] = Variable<String>(focusMusicUri);
     map['focus_music_name'] = Variable<String>(focusMusicName);
+    map['focus_playlist_json'] = Variable<String>(focusPlaylistJson);
     map['focus_lock_enabled'] = Variable<bool>(focusLockEnabled);
     map['completion_sound_enabled'] = Variable<bool>(completionSoundEnabled);
     map['timeline_start_minutes'] = Variable<int>(timelineStartMinutes);
@@ -5020,6 +5051,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       focusMusicEnabled: Value(focusMusicEnabled),
       focusMusicUri: Value(focusMusicUri),
       focusMusicName: Value(focusMusicName),
+      focusPlaylistJson: Value(focusPlaylistJson),
       focusLockEnabled: Value(focusLockEnabled),
       completionSoundEnabled: Value(completionSoundEnabled),
       timelineStartMinutes: Value(timelineStartMinutes),
@@ -5059,6 +5091,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       focusMusicEnabled: serializer.fromJson<bool>(json['focusMusicEnabled']),
       focusMusicUri: serializer.fromJson<String>(json['focusMusicUri']),
       focusMusicName: serializer.fromJson<String>(json['focusMusicName']),
+      focusPlaylistJson: serializer.fromJson<String>(json['focusPlaylistJson']),
       focusLockEnabled: serializer.fromJson<bool>(json['focusLockEnabled']),
       completionSoundEnabled: serializer.fromJson<bool>(
         json['completionSoundEnabled'],
@@ -5093,6 +5126,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'focusMusicEnabled': serializer.toJson<bool>(focusMusicEnabled),
       'focusMusicUri': serializer.toJson<String>(focusMusicUri),
       'focusMusicName': serializer.toJson<String>(focusMusicName),
+      'focusPlaylistJson': serializer.toJson<String>(focusPlaylistJson),
       'focusLockEnabled': serializer.toJson<bool>(focusLockEnabled),
       'completionSoundEnabled': serializer.toJson<bool>(completionSoundEnabled),
       'timelineStartMinutes': serializer.toJson<int>(timelineStartMinutes),
@@ -5119,6 +5153,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? focusMusicEnabled,
     String? focusMusicUri,
     String? focusMusicName,
+    String? focusPlaylistJson,
     bool? focusLockEnabled,
     bool? completionSoundEnabled,
     int? timelineStartMinutes,
@@ -5143,6 +5178,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     focusMusicEnabled: focusMusicEnabled ?? this.focusMusicEnabled,
     focusMusicUri: focusMusicUri ?? this.focusMusicUri,
     focusMusicName: focusMusicName ?? this.focusMusicName,
+    focusPlaylistJson: focusPlaylistJson ?? this.focusPlaylistJson,
     focusLockEnabled: focusLockEnabled ?? this.focusLockEnabled,
     completionSoundEnabled:
         completionSoundEnabled ?? this.completionSoundEnabled,
@@ -5208,6 +5244,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           data.focusMusicName.present
               ? data.focusMusicName.value
               : this.focusMusicName,
+      focusPlaylistJson:
+          data.focusPlaylistJson.present
+              ? data.focusPlaylistJson.value
+              : this.focusPlaylistJson,
       focusLockEnabled:
           data.focusLockEnabled.present
               ? data.focusLockEnabled.value
@@ -5254,6 +5294,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('focusMusicEnabled: $focusMusicEnabled, ')
           ..write('focusMusicUri: $focusMusicUri, ')
           ..write('focusMusicName: $focusMusicName, ')
+          ..write('focusPlaylistJson: $focusPlaylistJson, ')
           ..write('focusLockEnabled: $focusLockEnabled, ')
           ..write('completionSoundEnabled: $completionSoundEnabled, ')
           ..write('timelineStartMinutes: $timelineStartMinutes, ')
@@ -5282,6 +5323,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     focusMusicEnabled,
     focusMusicUri,
     focusMusicName,
+    focusPlaylistJson,
     focusLockEnabled,
     completionSoundEnabled,
     timelineStartMinutes,
@@ -5309,6 +5351,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.focusMusicEnabled == this.focusMusicEnabled &&
           other.focusMusicUri == this.focusMusicUri &&
           other.focusMusicName == this.focusMusicName &&
+          other.focusPlaylistJson == this.focusPlaylistJson &&
           other.focusLockEnabled == this.focusLockEnabled &&
           other.completionSoundEnabled == this.completionSoundEnabled &&
           other.timelineStartMinutes == this.timelineStartMinutes &&
@@ -5334,6 +5377,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> focusMusicEnabled;
   final Value<String> focusMusicUri;
   final Value<String> focusMusicName;
+  final Value<String> focusPlaylistJson;
   final Value<bool> focusLockEnabled;
   final Value<bool> completionSoundEnabled;
   final Value<int> timelineStartMinutes;
@@ -5357,6 +5401,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.focusMusicEnabled = const Value.absent(),
     this.focusMusicUri = const Value.absent(),
     this.focusMusicName = const Value.absent(),
+    this.focusPlaylistJson = const Value.absent(),
     this.focusLockEnabled = const Value.absent(),
     this.completionSoundEnabled = const Value.absent(),
     this.timelineStartMinutes = const Value.absent(),
@@ -5381,6 +5426,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.focusMusicEnabled = const Value.absent(),
     this.focusMusicUri = const Value.absent(),
     this.focusMusicName = const Value.absent(),
+    this.focusPlaylistJson = const Value.absent(),
     this.focusLockEnabled = const Value.absent(),
     this.completionSoundEnabled = const Value.absent(),
     this.timelineStartMinutes = const Value.absent(),
@@ -5405,6 +5451,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? focusMusicEnabled,
     Expression<String>? focusMusicUri,
     Expression<String>? focusMusicName,
+    Expression<String>? focusPlaylistJson,
     Expression<bool>? focusLockEnabled,
     Expression<bool>? completionSoundEnabled,
     Expression<int>? timelineStartMinutes,
@@ -5433,6 +5480,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (focusMusicEnabled != null) 'focus_music_enabled': focusMusicEnabled,
       if (focusMusicUri != null) 'focus_music_uri': focusMusicUri,
       if (focusMusicName != null) 'focus_music_name': focusMusicName,
+      if (focusPlaylistJson != null) 'focus_playlist_json': focusPlaylistJson,
       if (focusLockEnabled != null) 'focus_lock_enabled': focusLockEnabled,
       if (completionSoundEnabled != null)
         'completion_sound_enabled': completionSoundEnabled,
@@ -5462,6 +5510,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? focusMusicEnabled,
     Value<String>? focusMusicUri,
     Value<String>? focusMusicName,
+    Value<String>? focusPlaylistJson,
     Value<bool>? focusLockEnabled,
     Value<bool>? completionSoundEnabled,
     Value<int>? timelineStartMinutes,
@@ -5487,6 +5536,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       focusMusicEnabled: focusMusicEnabled ?? this.focusMusicEnabled,
       focusMusicUri: focusMusicUri ?? this.focusMusicUri,
       focusMusicName: focusMusicName ?? this.focusMusicName,
+      focusPlaylistJson: focusPlaylistJson ?? this.focusPlaylistJson,
       focusLockEnabled: focusLockEnabled ?? this.focusLockEnabled,
       completionSoundEnabled:
           completionSoundEnabled ?? this.completionSoundEnabled,
@@ -5548,6 +5598,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (focusMusicName.present) {
       map['focus_music_name'] = Variable<String>(focusMusicName.value);
     }
+    if (focusPlaylistJson.present) {
+      map['focus_playlist_json'] = Variable<String>(focusPlaylistJson.value);
+    }
     if (focusLockEnabled.present) {
       map['focus_lock_enabled'] = Variable<bool>(focusLockEnabled.value);
     }
@@ -5592,6 +5645,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('focusMusicEnabled: $focusMusicEnabled, ')
           ..write('focusMusicUri: $focusMusicUri, ')
           ..write('focusMusicName: $focusMusicName, ')
+          ..write('focusPlaylistJson: $focusPlaylistJson, ')
           ..write('focusLockEnabled: $focusLockEnabled, ')
           ..write('completionSoundEnabled: $completionSoundEnabled, ')
           ..write('timelineStartMinutes: $timelineStartMinutes, ')
@@ -8097,6 +8151,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> focusMusicEnabled,
       Value<String> focusMusicUri,
       Value<String> focusMusicName,
+      Value<String> focusPlaylistJson,
       Value<bool> focusLockEnabled,
       Value<bool> completionSoundEnabled,
       Value<int> timelineStartMinutes,
@@ -8122,6 +8177,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> focusMusicEnabled,
       Value<String> focusMusicUri,
       Value<String> focusMusicName,
+      Value<String> focusPlaylistJson,
       Value<bool> focusLockEnabled,
       Value<bool> completionSoundEnabled,
       Value<int> timelineStartMinutes,
@@ -8212,6 +8268,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get focusMusicName => $composableBuilder(
     column: $table.focusMusicName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get focusPlaylistJson => $composableBuilder(
+    column: $table.focusPlaylistJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8335,6 +8396,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get focusPlaylistJson => $composableBuilder(
+    column: $table.focusPlaylistJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get focusLockEnabled => $composableBuilder(
     column: $table.focusLockEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -8451,6 +8517,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get focusPlaylistJson => $composableBuilder(
+    column: $table.focusPlaylistJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get focusLockEnabled => $composableBuilder(
     column: $table.focusLockEnabled,
     builder: (column) => column,
@@ -8544,6 +8615,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> focusMusicEnabled = const Value.absent(),
                 Value<String> focusMusicUri = const Value.absent(),
                 Value<String> focusMusicName = const Value.absent(),
+                Value<String> focusPlaylistJson = const Value.absent(),
                 Value<bool> focusLockEnabled = const Value.absent(),
                 Value<bool> completionSoundEnabled = const Value.absent(),
                 Value<int> timelineStartMinutes = const Value.absent(),
@@ -8567,6 +8639,7 @@ class $$AppSettingsTableTableTableManager
                 focusMusicEnabled: focusMusicEnabled,
                 focusMusicUri: focusMusicUri,
                 focusMusicName: focusMusicName,
+                focusPlaylistJson: focusPlaylistJson,
                 focusLockEnabled: focusLockEnabled,
                 completionSoundEnabled: completionSoundEnabled,
                 timelineStartMinutes: timelineStartMinutes,
@@ -8592,6 +8665,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> focusMusicEnabled = const Value.absent(),
                 Value<String> focusMusicUri = const Value.absent(),
                 Value<String> focusMusicName = const Value.absent(),
+                Value<String> focusPlaylistJson = const Value.absent(),
                 Value<bool> focusLockEnabled = const Value.absent(),
                 Value<bool> completionSoundEnabled = const Value.absent(),
                 Value<int> timelineStartMinutes = const Value.absent(),
@@ -8615,6 +8689,7 @@ class $$AppSettingsTableTableTableManager
                 focusMusicEnabled: focusMusicEnabled,
                 focusMusicUri: focusMusicUri,
                 focusMusicName: focusMusicName,
+                focusPlaylistJson: focusPlaylistJson,
                 focusLockEnabled: focusLockEnabled,
                 completionSoundEnabled: completionSoundEnabled,
                 timelineStartMinutes: timelineStartMinutes,

@@ -88,7 +88,7 @@ class StatisticsService {
     required List<FocusSession> sessions,
   }) {
     final taskById = {for (final task in tasks) task.id: task};
-    final grouped = <String, ({String name, int minutes, int color})>{};
+    final grouped = <String, ({String name, int minutes})>{};
     for (final session in sessions) {
       final sessionTitle = session.note.trim();
       final taskTitle = taskById[session.taskId]?.title.trim() ?? '';
@@ -103,7 +103,6 @@ class StatisticsService {
       grouped[key] = (
         name: old?.name ?? name,
         minutes: (old?.minutes ?? 0) + session.actualMinutes,
-        color: AppColors.automaticFocusColor(name),
       );
     }
     var focusStats =
@@ -112,7 +111,7 @@ class StatisticsService {
               (entry) => FocusSubjectStat(
                 name: entry.value.name,
                 minutes: entry.value.minutes,
-                colorValue: entry.value.color,
+                colorValue: 0,
               ),
             )
             .toList()
@@ -130,6 +129,14 @@ class StatisticsService {
         ),
       ];
     }
+    focusStats = [
+      for (var index = 0; index < focusStats.length; index++)
+        FocusSubjectStat(
+          name: focusStats[index].name,
+          minutes: focusStats[index].minutes,
+          colorValue: AppColors.focusChartColor(index),
+        ),
+    ];
 
     return StatisticsData(
       taskCount: tasks.length,
