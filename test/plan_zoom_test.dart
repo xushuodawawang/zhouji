@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:zhouji/app.dart';
 import 'package:zhouji/database/app_database.dart';
+import 'package:zhouji/models/app_settings.dart';
 import 'package:zhouji/models/plan_task.dart';
 import 'package:zhouji/providers/app_providers.dart';
 import 'package:zhouji/repositories/plan_task_repository.dart';
@@ -33,7 +34,8 @@ void main() {
 
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(find.byTooltip('新建任务'), findsOneWidget);
-    final modeY = tester.getCenter(find.text('详细')).dy;
+    final modeY =
+        tester.getCenter(find.byKey(const ValueKey('week-view-toggle'))).dy;
     final createY = tester.getCenter(find.byTooltip('新建任务')).dy;
     expect((modeY - createY).abs(), lessThan(3));
 
@@ -54,7 +56,7 @@ void main() {
     );
     expect(surface.color!.a, closeTo(0.72, 0.01));
 
-    await tester.tap(find.text('总览'));
+    await tester.tap(find.byKey(const ValueKey('week-view-toggle')));
     await _settle(tester);
     final overviewTitle = tester.widget<Text>(find.text('考研第一轮数学复习与错题整理'));
     expect(overviewTitle.softWrap, isTrue);
@@ -147,6 +149,52 @@ void main() {
         )).single;
     expect(task.startMinutes, 14 * 60);
     expect(task.endMinutes, 16 * 60);
+    expect(tester.takeException(), isNull);
+    await _dispose(tester, database);
+  });
+
+  testWidgets('最小缩放时任务卡严格对齐时间线并自动缩字居中', (tester) async {
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    final repository = PlanTaskRepository(database);
+    final settingsRepository = SettingsRepository(database);
+    final monday = AppDateUtils.startOfWeek(DateTime.now());
+    final first = await repository.save(
+      PlanTaskDraft(
+        title: '408',
+        taskDate: monday,
+        startMinutes: 8 * 60,
+        endMinutes: 9 * 60,
+        colorValue: 0xFF80A9A5,
+      ),
+    );
+    final second = await repository.save(
+      PlanTaskDraft(
+        title: '英语',
+        taskDate: monday,
+        startMinutes: 9 * 60,
+        endMinutes: 10 * 60,
+        colorValue: 0xFF87A7C0,
+      ),
+    );
+    await settingsRepository.save(
+      const AppSettings().copyWith(
+        detailHourHeight: TimelinePositionCalculator.minHourHeight,
+      ),
+    );
+    await _pumpApp(tester, database, size: const Size(1000, 900));
+
+    final firstRect = tester.getRect(find.byKey(ValueKey(first)));
+    final secondRect = tester.getRect(find.byKey(ValueKey(second)));
+    expect(firstRect.height, 12);
+    expect(secondRect.height, 12);
+    expect((firstRect.bottom - secondRect.top).abs(), lessThan(0.01));
+    expect((firstRect.width - secondRect.width).abs(), lessThan(0.01));
+    expect(
+      (tester.getCenter(find.text('408')).dx - firstRect.center.dx).abs(),
+      lessThan(1),
+    );
+    expect(find.text('01:00'), findsNothing);
+    expect(find.text('02:00'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await _dispose(tester, database);
   });

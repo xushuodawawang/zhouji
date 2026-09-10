@@ -164,7 +164,6 @@ final todayFocusSessionsProvider = StreamProvider<List<FocusSession>>((ref) {
 final statisticsDataProvider =
     FutureProvider.family<StatisticsData, StatisticsRange>((ref, range) async {
       final period = StatisticsPeriod.forRange(range, DateTime.now());
-      final categories = await ref.watch(categoriesProvider.future);
       final tasks = await ref
           .watch(planTaskRepositoryProvider)
           .getBetween(period.start, period.end);
@@ -180,7 +179,6 @@ final statisticsDataProvider =
         tasks: tasks,
         records: records,
         sessions: sessions,
-        categories: categories,
       );
     });
 

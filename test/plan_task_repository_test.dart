@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zhouji/database/app_database.dart';
 import 'package:zhouji/models/plan_task.dart';
 import 'package:zhouji/repositories/plan_task_repository.dart';
+import 'package:zhouji/utils/app_colors.dart';
 
 void main() {
   late AppDatabase database;
@@ -134,5 +135,33 @@ void main() {
     expect(tasks.last.categoryId, 2);
     expect(tasks.last.isLocked, isTrue);
     expect(tasks.last.isCompleted, isFalse);
+  });
+
+  test('随机专注会写入计划并替换同一时段原有任务', () async {
+    final firstId = await repository.save(draft(start: 13 * 60, end: 14 * 60));
+    await repository.save(draft(start: 14 * 60, end: 15 * 60));
+
+    final focusId = await repository.placeFocusTask(
+      title: '408',
+      startedAt: DateTime(2026, 7, 20, 13, 30),
+      plannedMinutes: 90,
+    );
+    final tasks = await repository.watchWeek(monday).first;
+
+    expect(focusId, firstId);
+    expect(tasks, hasLength(1));
+    expect(tasks.single.title, '408');
+    expect(tasks.single.startMinutes, 13 * 60 + 30);
+    expect(tasks.single.endMinutes, 15 * 60);
+    expect(tasks.single.focusMinutes, 90);
+    expect(tasks.single.categoryId, isNull);
+    expect(tasks.single.colorValue, AppColors.automaticTaskColor('408'));
+  });
+
+  test('同名任务忽略空格与大小写后使用相同自动颜色', () {
+    expect(
+      AppColors.automaticTaskColor('  MATH 408 '),
+      AppColors.automaticTaskColor('math 408'),
+    );
   });
 }

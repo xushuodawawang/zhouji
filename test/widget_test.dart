@@ -20,8 +20,8 @@ void main() {
     );
     await _pumpFrames(tester);
 
-    expect(find.text('周计划'), findsWidgets);
-    expect(find.text('点击或长按空白时间段创建计划'), findsOneWidget);
+    expect(find.byKey(const ValueKey('plan-view-week')), findsOneWidget);
+    expect(find.text('点击创建，或长按后上下滑动选择时段'), findsOneWidget);
     await tester.tap(find.text('记录').last);
     await _pumpFrames(tester);
     expect(find.text('今日完成记录'), findsOneWidget);
@@ -39,10 +39,10 @@ void main() {
     );
     await _pumpFrames(tester);
 
-    await tester.tap(find.text('月计划'));
+    await tester.tap(find.byKey(const ValueKey('plan-view-month')));
     await _pumpFrames(tester);
     expect(find.text('本月'), findsOneWidget);
-    await tester.tap(find.text('日计划'));
+    await tester.tap(find.byKey(const ValueKey('plan-view-day')));
     await _pumpFrames(tester);
     expect(find.text('开始专注'), findsOneWidget);
     expect(find.text('全天安排'), findsOneWidget);

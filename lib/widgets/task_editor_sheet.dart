@@ -139,7 +139,6 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
     final settings =
         ref.watch(appSettingsProvider).valueOrNull ?? const AppSettings();
     final viewInsets = MediaQuery.viewInsetsOf(context);
@@ -305,45 +304,13 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
                               },
                             ),
                           ],
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<int>(
-                            key: ValueKey('category-${_categoryId ?? 0}'),
-                            initialValue: _categoryId ?? 0,
-                            decoration: const InputDecoration(
-                              labelText: '任务分类',
-                              prefixIcon: Icon(Icons.label_outline),
-                            ),
-                            items: [
-                              const DropdownMenuItem(
-                                value: 0,
-                                child: Text('未分类'),
-                              ),
-                              for (final category in categories)
-                                DropdownMenuItem(
-                                  value: category.id,
-                                  child: Text(category.name),
-                                ),
-                            ],
-                            onChanged:
-                                (value) => _change(() {
-                                  _categoryId = value == 0 ? null : value;
-                                  if (_categoryId != null) {
-                                    _colorValue =
-                                        categories
-                                            .firstWhere(
-                                              (item) => item.id == _categoryId,
-                                            )
-                                            .colorValue;
-                                  }
-                                }),
-                          ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 10),
                           if (settings.autoColorEnabled)
                             ListTile(
                               contentPadding: EdgeInsets.zero,
                               leading: const Icon(Icons.auto_awesome_outlined),
                               title: const Text('自动配色已开启'),
-                              subtitle: const Text('优先使用分类颜色；未分类时同名科目保持同色'),
+                              subtitle: const Text('同名任务会自动使用同一种颜色'),
                             )
                           else ...[
                             Text(
@@ -542,10 +509,7 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
     final title = _titleController.text.trim();
     var color = _colorValue;
     if (settings.autoColorEnabled) {
-      final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
-      final category =
-          categories.where((item) => item.id == _categoryId).firstOrNull;
-      color = category?.colorValue ?? AppColors.automaticTaskColor(title);
+      color = AppColors.automaticTaskColor(title);
     }
     return PlanTaskDraft(
       id: old?.id,

@@ -69,31 +69,14 @@ class FocusPage extends ConsumerWidget {
           if (!timer.isActive && !timer.isBreak) ...[
             FocusPresetCards(
               enabled: !timer.restoring,
-              onStart: (preset) {
-                final matching =
-                    recommendation?.title.trim() == preset.title.trim()
-                        ? recommendation
-                        : tasks
-                            .where(
-                              (t) =>
-                                  !t.isCompleted &&
-                                  AppDateUtils.isSameDate(
-                                    t.taskDate,
-                                    DateTime.now(),
-                                  ) &&
-                                  t.title.trim() == preset.title.trim(),
-                            )
-                            .firstOrNull;
-                final controller = ref.read(focusTimerProvider.notifier);
-                controller.selectTask(
-                  taskId: matching?.id,
-                  categoryId: matching?.categoryId,
-                  focusMinutes: preset.minutes,
-                  title: preset.title,
-                );
-                controller.start();
-                ref.read(_focusScrollProvider).jumpTo(0);
-              },
+              onStart:
+                  (preset) => _startPresetFocus(
+                    context,
+                    ref,
+                    tasks,
+                    title: preset.title,
+                    minutes: preset.minutes,
+                  ),
             ),
             const SizedBox(height: 16),
           ],
@@ -374,6 +357,49 @@ class FocusPage extends ConsumerWidget {
           });
     return candidates.firstOrNull;
   }
+
+  Future<void> _startPresetFocus(
+    BuildContext context,
+    WidgetRef ref,
+    List<PlanTask> tasks, {
+    required String title,
+    required int minutes,
+  }) async {
+    final currentPlan = _recommendedTask(tasks);
+    final sameCurrentTask =
+        currentPlan != null &&
+        _normalizedTitle(currentPlan.title) == _normalizedTitle(title);
+    try {
+      final taskId =
+          sameCurrentTask
+              ? currentPlan.id
+              : await ref
+                  .read(planTaskRepositoryProvider)
+                  .placeFocusTask(
+                    title: title,
+                    startedAt: DateTime.now(),
+                    plannedMinutes: minutes,
+                  );
+      final controller = ref.read(focusTimerProvider.notifier);
+      controller.selectTask(
+        taskId: taskId,
+        categoryId: sameCurrentTask ? currentPlan.categoryId : null,
+        focusMinutes: minutes,
+        title: title,
+      );
+      await controller.start();
+      final scroll = ref.read(_focusScrollProvider);
+      if (scroll.hasClients) scroll.jumpTo(0);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  String _normalizedTitle(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
   Future<void> _startFocus(
     WidgetRef ref,

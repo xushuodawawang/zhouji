@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
 import '../models/plan_task.dart';
+import '../utils/app_colors.dart';
 import '../utils/date_time_utils.dart';
 
 class RepositoryException implements Exception {
@@ -80,6 +81,56 @@ class PlanTaskRepository {
       rethrow;
     } catch (error) {
       throw RepositoryException('保存任务失败', error);
+    }
+  }
+
+  Future<int> placeFocusTask({
+    required String title,
+    required DateTime startedAt,
+    required int plannedMinutes,
+  }) async {
+    final normalizedTitle = title.trim().isEmpty ? '自由专注' : title.trim();
+    final date = AppDateUtils.dateOnly(startedAt);
+    final start = AppDateUtils.minutesSinceMidnight(startedAt);
+    final duration = plannedMinutes > 0 ? plannedMinutes : 15;
+    final end =
+        (start + duration)
+            .clamp(
+              start + AppDateUtils.manualMinimumMinutes,
+              AppDateUtils.maximumTimelineMinutes,
+            )
+            .toInt();
+    final now = DateTime.now();
+    final color = AppColors.automaticTaskColor(normalizedTitle);
+    final insertData = PlanTasksCompanion(
+      title: Value(normalizedTitle),
+      taskDate: Value(date),
+      startMinutes: Value(start),
+      endMinutes: Value(end),
+      colorValue: Value(color),
+      note: const Value(''),
+      isCompleted: const Value(false),
+      categoryId: const Value(null),
+      isLocked: const Value(false),
+      isAllDay: const Value(false),
+      sortOrder: const Value(0),
+      completedAt: const Value(null),
+      plannedDurationMinutes: Value(end - start),
+      focusMinutes: Value(plannedMinutes > 0 ? plannedMinutes : null),
+      createdAt: Value(now),
+      updatedAt: Value(now),
+    );
+    final updateData = insertData.copyWith(createdAt: const Value.absent());
+    try {
+      return await _database.replaceOverlappingTaskWithFocus(
+        insertData: insertData,
+        updateData: updateData,
+        date: date,
+        startMinutes: start,
+        endMinutes: end,
+      );
+    } catch (error) {
+      throw RepositoryException('同步专注到计划失败', error);
     }
   }
 

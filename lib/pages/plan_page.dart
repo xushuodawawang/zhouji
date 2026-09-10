@@ -18,50 +18,54 @@ class PlanPage extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
-          child: Row(
-            children: [
-              const ZhoujiMark(size: 30),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '周迹',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                ),
-              ),
-              IconButton(
-                tooltip: '时间轴与配色',
-                visualDensity: VisualDensity.compact,
-                onPressed: () => showTimelineSettings(context),
-                icon: const Icon(Icons.tune, size: 20),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
+          padding: const EdgeInsets.fromLTRB(10, 3, 8, 2),
           child: SizedBox(
-            width: double.infinity,
-            child: SegmentedButton<int>(
-              style: const ButtonStyle(
-                minimumSize: WidgetStatePropertyAll(Size(0, 38)),
-                padding: WidgetStatePropertyAll(
-                  EdgeInsets.symmetric(horizontal: 8),
+            height: 38,
+            child: Row(
+              children: [
+                const ZhoujiMark(size: 27),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: SegmentedButton<int>(
+                    style: const ButtonStyle(
+                      minimumSize: WidgetStatePropertyAll(Size(0, 34)),
+                      padding: WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(horizontal: 6),
+                      ),
+                    ),
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: 0,
+                        label: Text('周表', key: ValueKey('plan-view-week')),
+                      ),
+                      ButtonSegment(
+                        value: 1,
+                        label: Text('月表', key: ValueKey('plan-view-month')),
+                      ),
+                      ButtonSegment(
+                        value: 2,
+                        label: Text('日表', key: ValueKey('plan-view-day')),
+                      ),
+                    ],
+                    selected: {index},
+                    onSelectionChanged:
+                        (value) =>
+                            ref.read(planViewIndexProvider.notifier).state =
+                                value.first,
+                  ),
                 ),
-              ),
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 0, label: Text('周计划')),
-                ButtonSegment(value: 1, label: Text('月计划')),
-                ButtonSegment(value: 2, label: Text('日计划')),
+                IconButton(
+                  tooltip: '时间轴与配色',
+                  constraints: const BoxConstraints.tightFor(
+                    width: 38,
+                    height: 38,
+                  ),
+                  padding: EdgeInsets.zero,
+                  onPressed: () => showTimelineSettings(context),
+                  icon: const Icon(Icons.tune, size: 19),
+                ),
               ],
-              selected: {index},
-              onSelectionChanged:
-                  (value) =>
-                      ref.read(planViewIndexProvider.notifier).state =
-                          value.first,
             ),
           ),
         ),

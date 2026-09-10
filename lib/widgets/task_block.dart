@@ -62,6 +62,7 @@ class TaskBlock extends StatelessWidget {
     };
     final foreground = Theme.of(context).colorScheme.onSurface;
     final interactive = !isPreview && !task.isLocked;
+    final showControls = interactive && actualHeight >= 28;
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 150),
@@ -116,14 +117,19 @@ class TaskBlock extends StatelessWidget {
                 ),
                 Positioned.fill(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(8, 4, interactive ? 42 : 6, 4),
+                    padding: EdgeInsets.fromLTRB(
+                      6,
+                      2,
+                      showControls ? 29 : 6,
+                      2,
+                    ),
                     child: LayoutBuilder(
                       builder:
                           (context, constraints) => Stack(
                             children: [
                               Positioned.fill(
                                 child: Align(
-                                  alignment: Alignment.centerLeft,
+                                  alignment: Alignment.center,
                                   child: TaskTitle(
                                     title: task.title,
                                     cardHeight:
@@ -133,13 +139,14 @@ class TaskBlock extends StatelessWidget {
                                     color: foreground,
                                     fontSize: 12,
                                     trailing: [
-                                      if (task.isLocked)
+                                      if (actualHeight >= 28 && task.isLocked)
                                         Icon(
                                           Icons.lock,
                                           size: 13,
                                           color: foreground,
                                         ),
-                                      if (status == TaskDisplayStatus.completed)
+                                      if (actualHeight >= 28 &&
+                                          status == TaskDisplayStatus.completed)
                                         Icon(
                                           Icons.check_circle,
                                           size: 13,
@@ -149,7 +156,7 @@ class TaskBlock extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              if (constraints.maxHeight >= 72)
+                              if (constraints.maxHeight >= 54)
                                 Positioned(
                                   left: 0,
                                   right: 0,
@@ -160,6 +167,7 @@ class TaskBlock extends StatelessWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.fade,
                                     softWrap: false,
+                                    textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: foreground.withAlpha(215),
                                       fontSize: 9,
@@ -172,24 +180,12 @@ class TaskBlock extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (actualHeight < 47)
-                  Positioned(
-                    top: actualHeight.clamp(8, 45),
-                    left: 4,
-                    right: 4,
-                    child: IgnorePointer(
-                      child: Container(
-                        height: 1.5,
-                        color: foreground.withAlpha(155),
-                      ),
-                    ),
-                  ),
-                if (interactive)
+                if (showControls)
                   Positioned(
                     top: 0,
                     left: 0,
-                    right: 48,
-                    height: 18,
+                    right: 30,
+                    height: 14,
                     child: TaskResizeHandle(
                       edge: TaskResizeEdge.top,
                       foreground: foreground,
@@ -201,12 +197,12 @@ class TaskBlock extends StatelessWidget {
                       onCancel: onResizeTopCancel,
                     ),
                   ),
-                if (interactive)
+                if (showControls)
                   Positioned(
                     right: 0,
                     top: 0,
-                    width: 48,
-                    height: 48,
+                    width: 32,
+                    bottom: 0,
                     child: TaskDragHandle(
                       foreground: foreground,
                       onTap: onTap,
@@ -217,12 +213,12 @@ class TaskBlock extends StatelessWidget {
                       onCancel: onMoveCancel,
                     ),
                   ),
-                if (interactive)
+                if (showControls)
                   Positioned(
                     left: 0,
-                    right: 48,
+                    right: 30,
                     bottom: 0,
-                    height: 18,
+                    height: 14,
                     child: TaskResizeHandle(
                       edge: TaskResizeEdge.bottom,
                       foreground: foreground,
@@ -298,13 +294,18 @@ class TaskDragHandle extends StatelessWidget {
         onEnd: onEnd,
         onCancel: onCancel,
         child: Align(
-          alignment: Alignment.topRight,
-          child: Padding(
-            padding: const EdgeInsets.all(5),
+          alignment: Alignment.center,
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: foreground.withAlpha(20),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Icon(
-              Icons.drag_indicator,
-              size: 16,
-              color: foreground.withAlpha(185),
+              Icons.open_with_rounded,
+              size: 14,
+              color: foreground.withAlpha(170),
             ),
           ),
         ),
@@ -355,9 +356,9 @@ class TaskResizeHandle extends StatelessWidget {
                   ? Alignment.topCenter
                   : Alignment.bottomCenter,
           child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 3),
-            width: 24,
-            height: 3,
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            width: 20,
+            height: 2,
             decoration: BoxDecoration(
               color: foreground.withAlpha(160),
               borderRadius: BorderRadius.circular(2),

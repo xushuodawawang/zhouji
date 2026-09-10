@@ -79,7 +79,7 @@ class _TimelineSettingsSheetState extends ConsumerState<TimelineSettingsSheet> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('任务自动配色'),
-          subtitle: const Text('优先采用分类颜色，同名任务保持相同颜色'),
+          subtitle: const Text('按任务名称自动分配，同名任务始终保持相同颜色'),
           value: settings.autoColorEnabled,
           onChanged:
               (v) => ref

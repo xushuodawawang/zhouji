@@ -366,130 +366,130 @@ class _WeekHeader extends StatelessWidget {
         visualDensity: VisualDensity.compact,
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 2, 8, 3),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    AppDateUtils.weekRangeLabel(weekStart),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+        padding: const EdgeInsets.fromLTRB(9, 1, 7, 2),
+        child: SizedBox(
+          height: 40,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  AppDateUtils.weekRangeLabel(weekStart),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
-                IconButton(
-                  tooltip: '上一周',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onPrevious,
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                TextButton(
+              ),
+              _HeaderIcon(
+                tooltip: '上一周',
+                onPressed: onPrevious,
+                icon: Icons.chevron_left,
+              ),
+              SizedBox(
+                width: 34,
+                child: TextButton(
                   style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    minimumSize: const Size(48, 36),
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(34, 32),
                   ),
                   onPressed: onToday,
                   child: const Text('本周'),
                 ),
-                IconButton(
-                  tooltip: '下一周',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onNext,
-                  icon: const Icon(Icons.chevron_right),
+              ),
+              _HeaderIcon(
+                tooltip: '下一周',
+                onPressed: onNext,
+                icon: Icons.chevron_right,
+              ),
+              _HeaderIcon(
+                key: const ValueKey('week-view-toggle'),
+                tooltip:
+                    settings.weekViewMode == WeekViewMode.detail
+                        ? '切换到总览'
+                        : '切换到详细',
+                onPressed:
+                    () => onModeChanged(
+                      settings.weekViewMode == WeekViewMode.detail
+                          ? WeekViewMode.overview
+                          : WeekViewMode.detail,
+                    ),
+                icon:
+                    settings.weekViewMode == WeekViewMode.detail
+                        ? Icons.view_week_outlined
+                        : Icons.view_day_outlined,
+              ),
+              if (settings.weekViewMode == WeekViewMode.detail) ...[
+                _HeaderIcon(
+                  key: const ValueKey('detail-zoom-out'),
+                  tooltip: '缩小时间表',
+                  onPressed:
+                      detailHourHeight >
+                              TimelinePositionCalculator.minHourHeight
+                          ? onZoomOut
+                          : null,
+                  icon: Icons.remove,
+                ),
+                Tooltip(
+                  message: '适配整天',
+                  child: InkWell(
+                    key: const ValueKey('detail-zoom-fit-day'),
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: onFitDay,
+                    child: SizedBox(
+                      width: 34,
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          '${TimelinePositionCalculator.zoomPercentage(detailHourHeight)}%',
+                          key: const ValueKey('detail-zoom-percentage'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                _HeaderIcon(
+                  key: const ValueKey('detail-zoom-in'),
+                  tooltip: '放大时间表',
+                  onPressed:
+                      detailHourHeight <
+                              TimelinePositionCalculator.maxHourHeight
+                          ? onZoomIn
+                          : null,
+                  icon: Icons.add,
                 ),
               ],
-            ),
-            SizedBox(
-              height: 40,
-              child: Row(
-                children: [
-                  SegmentedButton<WeekViewMode>(
-                    style: const ButtonStyle(
-                      minimumSize: WidgetStatePropertyAll(Size(0, 36)),
-                      padding: WidgetStatePropertyAll(
-                        EdgeInsets.symmetric(horizontal: 9),
-                      ),
-                    ),
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(
-                        value: WeekViewMode.overview,
-                        label: Text('总览'),
-                      ),
-                      ButtonSegment(
-                        value: WeekViewMode.detail,
-                        label: Text('详细'),
-                      ),
-                    ],
-                    selected: {settings.weekViewMode},
-                    onSelectionChanged: (value) => onModeChanged(value.first),
-                  ),
-                  const Spacer(),
-                  if (settings.weekViewMode == WeekViewMode.detail) ...[
-                    IconButton.outlined(
-                      key: const ValueKey('detail-zoom-out'),
-                      tooltip: '缩小时间表',
-                      constraints: const BoxConstraints.tightFor(
-                        width: 36,
-                        height: 36,
-                      ),
-                      padding: EdgeInsets.zero,
-                      onPressed:
-                          detailHourHeight >
-                                  TimelinePositionCalculator.minHourHeight
-                              ? onZoomOut
-                              : null,
-                      icon: const Icon(Icons.remove, size: 18),
-                    ),
-                    SizedBox(
-                      width: 42,
-                      child: Text(
-                        '${TimelinePositionCalculator.zoomPercentage(detailHourHeight)}%',
-                        key: const ValueKey('detail-zoom-percentage'),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
-                    IconButton.outlined(
-                      key: const ValueKey('detail-zoom-in'),
-                      tooltip: '放大时间表',
-                      constraints: const BoxConstraints.tightFor(
-                        width: 36,
-                        height: 36,
-                      ),
-                      padding: EdgeInsets.zero,
-                      onPressed:
-                          detailHourHeight <
-                                  TimelinePositionCalculator.maxHourHeight
-                              ? onZoomIn
-                              : null,
-                      icon: const Icon(Icons.add, size: 18),
-                    ),
-                    IconButton(
-                      key: const ValueKey('detail-zoom-fit-day'),
-                      tooltip: '适配整天',
-                      constraints: const BoxConstraints.tightFor(
-                        width: 38,
-                        height: 38,
-                      ),
-                      onPressed: onFitDay,
-                      icon: const Icon(Icons.fit_screen_outlined, size: 19),
-                    ),
-                  ],
-                  CompactCreateTaskButton(
-                    showLabel: false,
-                    onPressed: onCreate,
-                  ),
-                ],
-              ),
-            ),
-          ],
+              CompactCreateTaskButton(showLabel: false, onPressed: onCreate),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _HeaderIcon extends StatelessWidget {
+  const _HeaderIcon({
+    super.key,
+    required this.tooltip,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: tooltip,
+    constraints: const BoxConstraints.tightFor(width: 30, height: 32),
+    padding: EdgeInsets.zero,
+    onPressed: onPressed,
+    icon: Icon(icon, size: 18),
+  );
 }
 
 class _ErrorState extends StatelessWidget {

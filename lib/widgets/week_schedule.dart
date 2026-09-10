@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/plan_task.dart';
 import '../utils/date_time_utils.dart';
@@ -54,6 +55,7 @@ enum _DragMode { move, resizeTop, resizeBottom }
 class _WeekScheduleState extends State<WeekSchedule> {
   static const _timeAxisWidth = 56.0;
   static const _headerHeight = 46.0;
+  static const _minimumTaskHeight = 12.0;
   int get _slotCount =>
       (widget.timelineEndMinutes - widget.timelineStartMinutes) ~/
       AppDateUtils.slotMinutes;
@@ -359,6 +361,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
   }
 
   Widget _buildTimeAxis(BuildContext context) {
+    final labelEveryHours = math.max(1, (18 / widget.hourHeight).ceil());
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -370,7 +373,8 @@ class _WeekScheduleState extends State<WeekSchedule> {
                     : math.min(slot * _slotHeight - 7, _gridHeight - 16),
             right: 8,
             child: Text(
-              slot % (60 ~/ AppDateUtils.slotMinutes) == 0
+              slot % (labelEveryHours * 60 ~/ AppDateUtils.slotMinutes) == 0 ||
+                      slot == _slotCount
                   ? AppDateUtils.formatMinutes(
                     widget.timelineStartMinutes +
                         slot * AppDateUtils.slotMinutes,
@@ -426,7 +430,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
                 ),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                  child: Text('点击或长按空白时间段创建计划'),
+                  child: Text('点击创建，或长按后上下滑动选择时段'),
                 ),
               ),
             ),
@@ -485,7 +489,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
       left: day * _columnWidth + 3 + layout.lane * laneWidth,
       top: _topForMinutes(task.startMinutes) + 2,
       width: laneWidth - 2,
-      height: math.max(48, actualHeight),
+      height: math.max(_minimumTaskHeight, actualHeight),
       child: TaskBlock(
         key: ValueKey(task.id),
         task: task,
@@ -524,7 +528,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
       left: day * _columnWidth + 3,
       top: _topForMinutes(draft.startMinutes) + 2,
       width: _columnWidth - 6,
-      height: math.max(48, actualHeight),
+      height: math.max(_minimumTaskHeight, actualHeight),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -587,7 +591,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
       left: _creationDay! * _columnWidth + 3,
       top: _topForMinutes(start) + 2,
       width: _columnWidth - 6,
-      height: math.max(48, _heightForRange(start, end) - 4),
+      height: math.max(_minimumTaskHeight, _heightForRange(start, end) - 4),
       child: IgnorePointer(
         child: Container(
           padding: const EdgeInsets.all(8),
@@ -599,6 +603,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
               width: 1.5,
             ),
           ),
+          alignment: Alignment.center,
           child: Text(
             '${AppDateUtils.formatMinutes(start)}－'
             '${AppDateUtils.formatMinutes(end)}',
@@ -607,6 +612,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
               fontWeight: FontWeight.w700,
               fontSize: 11,
             ),
+            textAlign: TextAlign.center,
           ),
         ),
       ),
@@ -687,7 +693,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
         final visualEnd =
             top +
             math.max(
-              48,
+              _minimumTaskHeight,
               _heightForRange(task.startMinutes, task.endMinutes) - 4,
             );
         if (pending.isNotEmpty && top >= groupEnd) flushGroup();
@@ -717,21 +723,25 @@ class _WeekScheduleState extends State<WeekSchedule> {
       _creationStart = start;
       _creationEnd = start + AppDateUtils.slotMinutes;
     });
+    HapticFeedback.selectionClick();
     _updateAutoScroll(details.globalPosition);
   }
 
   void _updateCreation(LongPressMoveUpdateDetails details) {
     if (_creationStart == null) return;
+    final anchor = _creationStart!;
     final raw = _minutesForY(details.localPosition.dy);
-    var end = raw;
-    if (end <= _creationStart!) {
-      end = _creationStart! + AppDateUtils.slotMinutes;
-    }
+    final end =
+        raw >= anchor
+            ? math.max(raw, anchor + AppDateUtils.slotMinutes)
+            : math.min(raw, anchor - AppDateUtils.slotMinutes);
+    final next = end.clamp(
+      widget.timelineStartMinutes,
+      widget.timelineEndMinutes,
+    );
+    if (next != _creationEnd) HapticFeedback.selectionClick();
     setState(() {
-      _creationEnd = end.clamp(
-        _creationStart! + AppDateUtils.slotMinutes,
-        widget.timelineEndMinutes,
-      );
+      _creationEnd = next;
     });
     _updateAutoScroll(details.globalPosition);
   }
@@ -747,6 +757,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
       _creationEnd = null;
     });
     if (day == null || start == null || end == null) return;
+    HapticFeedback.lightImpact();
     widget.onCreateTask(
       widget.weekStart.add(Duration(days: day)),
       math.min(start, end),

@@ -15,10 +15,10 @@ class CompactCreateTaskButton extends StatelessWidget {
     if (!showLabel) {
       return IconButton.filledTonal(
         tooltip: '新建任务',
-        constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+        constraints: const BoxConstraints.tightFor(width: 36, height: 36),
         padding: EdgeInsets.zero,
         onPressed: onPressed,
-        icon: const Icon(Icons.add, size: 22),
+        icon: const Icon(Icons.add, size: 20),
       );
     }
     return Tooltip(

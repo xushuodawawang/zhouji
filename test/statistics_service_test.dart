@@ -2,21 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zhouji/models/activity_record.dart';
 import 'package:zhouji/models/focus_session.dart';
 import 'package:zhouji/models/plan_task.dart';
-import 'package:zhouji/models/task_category.dart';
 import 'package:zhouji/services/statistics_service.dart';
 
 void main() {
-  test('统计总时长、完成率与分类环图之和一致', () {
+  test('统计总时长、完成率与任务名称环图之和一致', () {
     final date = DateTime(2026, 7, 20);
-    final categories = List.generate(
-      6,
-      (index) => TaskCategory(
-        id: index + 1,
-        name: '分类${index + 1}',
-        colorValue: 0xFF708F88 + index,
-        isDefault: true,
-      ),
-    );
     final tasks = [
       _task(1, date, completed: true, start: 420, end: 480),
       _task(2, date, completed: false, start: 510, end: 600),
@@ -32,7 +22,7 @@ void main() {
         actualMinutes: 10 + index,
         mode: TimerMode.pomodoro,
         completed: index.isEven,
-        categoryId: index + 1,
+        note: '科目${index + 1}',
       ),
     );
     final records = [
@@ -57,7 +47,6 @@ void main() {
       tasks: tasks,
       records: records,
       sessions: sessions,
-      categories: categories,
     );
 
     expect(data.taskCount, 2);
@@ -70,10 +59,11 @@ void main() {
       sessions.fold(0, (sum, item) => sum + item.actualMinutes),
     );
     expect(
-      data.categoryStats.fold(0, (sum, item) => sum + item.minutes),
+      data.focusStats.fold(0, (sum, item) => sum + item.minutes),
       data.focusMinutes,
     );
-    expect(data.categoryStats.length, 6); // 前5项 + 其他
+    expect(data.focusStats.length, 6); // 前5项 + 其他
+    expect(data.focusStats.first.name, '科目6');
     expect(data.trend, hasLength(7));
   });
 }

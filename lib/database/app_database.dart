@@ -5,6 +5,8 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../utils/app_colors.dart';
+
 part 'app_database.g.dart';
 
 @DataClassName('PlanTaskRow')
@@ -287,6 +289,7 @@ class AppDatabase extends _$AppDatabase {
         'CREATE INDEX IF NOT EXISTS idx_focus_date ON focus_sessions(session_date)',
       );
       await _seedV2Defaults();
+      await _normalizeAutomaticTaskColors();
     },
   );
 
@@ -396,6 +399,78 @@ class AppDatabase extends _$AppDatabase {
       await (update(planTasks)
         ..where((row) => row.id.equals(taskId))).write(data);
       return taskId;
+    });
+  }
+
+  Future<void> _normalizeAutomaticTaskColors() async {
+    final settings = await getSettings();
+    if (!settings.autoColorEnabled) return;
+    final rows = await select(planTasks).get();
+    await batch((batch) {
+      for (final row in rows) {
+        final color = AppColors.automaticTaskColor(row.title);
+        if (color == row.colorValue) continue;
+        batch.update(
+          planTasks,
+          PlanTasksCompanion(colorValue: Value(color)),
+          where: (table) => table.id.equals(row.id),
+        );
+      }
+    });
+  }
+
+  /// Places an unplanned focus block on the timeline. Any plan occupying the
+  /// same real time is replaced so the schedule reflects what is being done.
+  Future<int> replaceOverlappingTaskWithFocus({
+    required PlanTasksCompanion insertData,
+    required PlanTasksCompanion updateData,
+    required DateTime date,
+    required int startMinutes,
+    required int endMinutes,
+  }) {
+    return transaction(() async {
+      final absoluteStart = date.add(Duration(minutes: startMinutes));
+      final absoluteEnd = date.add(Duration(minutes: endMinutes));
+      final candidates =
+          await (select(planTasks)..where(
+            (row) =>
+                row.taskDate.isBiggerOrEqualValue(
+                  date.subtract(const Duration(days: 1)),
+                ) &
+                row.taskDate.isSmallerOrEqualValue(
+                  date.add(const Duration(days: 1)),
+                ) &
+                row.isAllDay.equals(false),
+          )).get();
+      final overlaps =
+          candidates.where((row) {
+            final rowStart = row.taskDate.add(
+              Duration(minutes: row.startMinutes),
+            );
+            final rowEnd = row.taskDate.add(Duration(minutes: row.endMinutes));
+            return rowStart.isBefore(absoluteEnd) &&
+                rowEnd.isAfter(absoluteStart);
+          }).toList();
+
+      if (overlaps.isEmpty) return into(planTasks).insert(insertData);
+
+      final primary = overlaps.firstWhere((row) {
+        final rowStart = row.taskDate.add(Duration(minutes: row.startMinutes));
+        final rowEnd = row.taskDate.add(Duration(minutes: row.endMinutes));
+        return !absoluteStart.isBefore(rowStart) &&
+            absoluteStart.isBefore(rowEnd);
+      }, orElse: () => overlaps.first);
+      final redundantIds = [
+        for (final row in overlaps)
+          if (row.id != primary.id) row.id,
+      ];
+      if (redundantIds.isNotEmpty) {
+        await (delete(planTasks)
+          ..where((row) => row.id.isIn(redundantIds))).go();
+      }
+      await (update(planTasks)
+        ..where((row) => row.id.equals(primary.id))).write(updateData);
+      return primary.id;
     });
   }
 

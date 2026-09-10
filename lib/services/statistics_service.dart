@@ -1,7 +1,7 @@
 import '../models/activity_record.dart';
 import '../models/focus_session.dart';
 import '../models/plan_task.dart';
-import '../models/task_category.dart';
+import '../utils/app_colors.dart';
 import '../utils/date_time_utils.dart';
 
 enum StatisticsRange { today, week, month }
@@ -31,8 +31,8 @@ class StatisticsPeriod {
   }
 }
 
-class CategoryStat {
-  const CategoryStat({
+class FocusSubjectStat {
+  const FocusSubjectStat({
     required this.name,
     required this.minutes,
     required this.colorValue,
@@ -59,7 +59,7 @@ class StatisticsData {
     required this.focusMinutes,
     required this.focusCount,
     required this.completedPomodoros,
-    required this.categoryStats,
+    required this.focusStats,
     required this.trend,
   });
 
@@ -70,7 +70,7 @@ class StatisticsData {
   final int focusMinutes;
   final int focusCount;
   final int completedPomodoros;
-  final List<CategoryStat> categoryStats;
+  final List<FocusSubjectStat> focusStats;
   final List<TrendStat> trend;
 
   double get completionRate =>
@@ -86,38 +86,48 @@ class StatisticsService {
     required List<PlanTask> tasks,
     required List<ActivityRecord> records,
     required List<FocusSession> sessions,
-    required List<TaskCategory> categories,
   }) {
-    final categoryById = {for (final item in categories) item.id: item};
-    final grouped = <String, ({int minutes, int color})>{};
+    final taskById = {for (final task in tasks) task.id: task};
+    final grouped = <String, ({String name, int minutes, int color})>{};
     for (final session in sessions) {
-      final category = categoryById[session.categoryId];
-      final name = category?.name ?? '未分类专注';
-      final color = category?.colorValue ?? 0xFF8B929A;
-      final old = grouped[name];
-      grouped[name] = (
+      final sessionTitle = session.note.trim();
+      final taskTitle = taskById[session.taskId]?.title.trim() ?? '';
+      final name =
+          sessionTitle.isNotEmpty
+              ? sessionTitle
+              : taskTitle.isNotEmpty
+              ? taskTitle
+              : '自由专注';
+      final key = name.toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      final old = grouped[key];
+      grouped[key] = (
+        name: old?.name ?? name,
         minutes: (old?.minutes ?? 0) + session.actualMinutes,
-        color: color,
+        color: AppColors.automaticFocusColor(name),
       );
     }
-    var categoryStats =
+    var focusStats =
         grouped.entries
             .map(
-              (entry) => CategoryStat(
-                name: entry.key,
+              (entry) => FocusSubjectStat(
+                name: entry.value.name,
                 minutes: entry.value.minutes,
                 colorValue: entry.value.color,
               ),
             )
             .toList()
           ..sort((a, b) => b.minutes.compareTo(a.minutes));
-    if (categoryStats.length > 5) {
-      final otherMinutes = categoryStats
+    if (focusStats.length > 5) {
+      final otherMinutes = focusStats
           .skip(5)
           .fold(0, (sum, item) => sum + item.minutes);
-      categoryStats = [
-        ...categoryStats.take(5),
-        CategoryStat(name: '其他', minutes: otherMinutes, colorValue: 0xFF9CA3A8),
+      focusStats = [
+        ...focusStats.take(5),
+        FocusSubjectStat(
+          name: '其他',
+          minutes: otherMinutes,
+          colorValue: 0xFF83988E,
+        ),
       ];
     }
 
@@ -142,7 +152,7 @@ class StatisticsService {
                     session.completed && session.mode == TimerMode.pomodoro,
               )
               .length,
-      categoryStats: categoryStats,
+      focusStats: focusStats,
       trend: _buildTrend(range, period, sessions),
     );
   }

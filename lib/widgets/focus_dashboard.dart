@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/focus_session.dart';
 import '../providers/app_providers.dart';
+import '../utils/app_colors.dart';
 import '../utils/date_time_utils.dart';
 
 class FocusDashboard extends ConsumerStatefulWidget {
@@ -15,7 +16,7 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
   DateTime _day = AppDateUtils.dateOnly(DateTime.now());
   int _range = 0;
   DateTimeRange? _custom;
-  static const _cyan = Color(0xFF168B9B);
+  static const _green = Color(0xFF17725F);
 
   @override
   Widget build(BuildContext context) {
@@ -223,9 +224,7 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
                           child: SizedBox.square(
                             dimension: 160,
                             child: CustomPaint(
-                              painter: _FocusRing(
-                                entries.map((e) => e.value).toList(),
-                              ),
+                              painter: _FocusRing(entries),
                               child: Center(
                                 child: Text(
                                   AppDateUtils.formatDuration(
@@ -251,9 +250,11 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
                                 Icon(
                                   Icons.circle,
                                   size: 10,
-                                  color:
-                                      _FocusRing.colors[i %
-                                          _FocusRing.colors.length],
+                                  color: Color(
+                                    AppColors.automaticFocusColor(
+                                      entries[i].key,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -308,14 +309,14 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         children: [
-          Text(label, style: const TextStyle(color: _cyan, fontSize: 13)),
+          Text(label, style: const TextStyle(color: _green, fontSize: 13)),
           const SizedBox(height: 9),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               value,
               style: const TextStyle(
-                color: _cyan,
+                color: _green,
                 fontSize: 27,
                 fontWeight: FontWeight.w500,
               ),
@@ -340,7 +341,7 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
                   child: Text(
                     title,
                     style: const TextStyle(
-                      color: _cyan,
+                      color: _green,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -396,18 +397,11 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
 }
 
 class _FocusRing extends CustomPainter {
-  _FocusRing(this.values);
-  final List<int> values;
-  static const colors = [
-    Color(0xFF27B6C5),
-    Color(0xFF7696D2),
-    Color(0xFFAD90C8),
-    Color(0xFFE4AB7A),
-    Color(0xFF80B89D),
-    Color(0xFFCC8FA4),
-  ];
+  _FocusRing(this.entries);
+  final List<MapEntry<String, int>> entries;
   @override
   void paint(Canvas canvas, Size size) {
+    final values = entries.map((entry) => entry.value).toList();
     final total = values.fold(0, (a, b) => a + b);
     if (total == 0) return;
     var start = -math.pi / 2;
@@ -419,7 +413,7 @@ class _FocusRing extends CustomPainter {
         sweep,
         false,
         Paint()
-          ..color = colors[i % colors.length]
+          ..color = Color(AppColors.automaticFocusColor(entries[i].key))
           ..style = PaintingStyle.stroke
           ..strokeWidth = 20,
       );
@@ -428,7 +422,7 @@ class _FocusRing extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _FocusRing old) => old.values != values;
+  bool shouldRepaint(covariant _FocusRing old) => old.entries != entries;
 }
 
 class _HourBars extends CustomPainter {
@@ -451,7 +445,7 @@ class _HourBars extends CustomPainter {
           ),
           const Radius.circular(2),
         ),
-        Paint()..color = const Color(0xFF36BDCB),
+        Paint()..color = const Color(0xFF3E9F78),
       );
       if (i % 6 == 0 || i == 23) {
         final text = TextPainter(

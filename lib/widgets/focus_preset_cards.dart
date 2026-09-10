@@ -17,7 +17,7 @@ class FocusPresetCards extends ConsumerWidget {
     required this.onStart,
     required this.enabled,
   });
-  final void Function(FocusPresetRow) onStart;
+  final Future<void> Function(FocusPresetRow) onStart;
   final bool enabled;
 
   @override
@@ -114,7 +114,9 @@ class FocusPresetCards extends ConsumerWidget {
                                   ),
                                   TextButton(
                                     onPressed:
-                                        enabled ? () => onStart(item) : null,
+                                        enabled
+                                            ? () async => onStart(item)
+                                            : null,
                                     style: TextButton.styleFrom(
                                       foregroundColor: Colors.white,
                                       disabledForegroundColor: Colors.white54,

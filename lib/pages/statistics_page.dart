@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_settings.dart';
-import '../models/task_category.dart';
 import '../providers/app_providers.dart';
 import '../services/statistics_service.dart';
-import '../utils/app_colors.dart';
 import '../utils/date_time_utils.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/focus_dashboard.dart';
@@ -49,10 +47,10 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
               colors:
                   Theme.of(context).brightness == Brightness.dark
                       ? [
-                        const Color(0xFF153D43),
+                        const Color(0xFF15382E),
                         Theme.of(context).colorScheme.surface,
                       ]
-                      : [const Color(0xFF68DEEA), const Color(0xFFEFF5F5)],
+                      : [const Color(0xFFB9E4D5), const Color(0xFFF3F7F1)],
             ),
           ),
           child: ListView(
@@ -198,7 +196,7 @@ class _StatisticsContent extends StatelessWidget {
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
-        if (data.categoryStats.isEmpty)
+        if (data.focusStats.isEmpty)
           const _EmptyChart(text: '还没有专注记录')
         else
           Card(
@@ -209,7 +207,7 @@ class _StatisticsContent extends StatelessWidget {
                   SizedBox.square(
                     dimension: 142,
                     child: CustomPaint(
-                      painter: _DonutPainter(data.categoryStats),
+                      painter: _DonutPainter(data.focusStats),
                       child: Center(
                         child: Text(
                           AppDateUtils.formatDuration(data.focusMinutes),
@@ -223,7 +221,7 @@ class _StatisticsContent extends StatelessWidget {
                   Expanded(
                     child: Column(
                       children: [
-                        for (final item in data.categoryStats)
+                        for (final item in data.focusStats)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 3),
                             child: Row(
@@ -369,7 +367,7 @@ class _EmptyChart extends StatelessWidget {
 class _DonutPainter extends CustomPainter {
   const _DonutPainter(this.items);
 
-  final List<CategoryStat> items;
+  final List<FocusSubjectStat> items;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -459,12 +457,11 @@ class _SettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings =
         ref.watch(appSettingsProvider).valueOrNull ?? const AppSettings();
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.82,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
+      initialChildSize: 0.62,
+      minChildSize: 0.45,
+      maxChildSize: 0.85,
       builder:
           (context, controller) => ListView(
             controller: controller,
@@ -586,162 +583,8 @@ class _SettingsSheet extends ConsumerWidget {
                       .save(settings.copyWith(notificationEnabled: enabled));
                 },
               ),
-              const Divider(height: 28),
-              Row(
-                children: [
-                  Text(
-                    '任务分类',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  FilledButton.tonalIcon(
-                    onPressed: () => _editCategory(context, ref),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('新增'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              for (final category in categories)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    radius: 8,
-                    backgroundColor: Color(category.colorValue),
-                  ),
-                  title: Text(category.name),
-                  subtitle: Text(category.isDefault ? '默认分类' : '自定义分类'),
-                  trailing:
-                      category.isDefault
-                          ? null
-                          : PopupMenuButton<String>(
-                            onSelected: (action) {
-                              if (action == 'edit') {
-                                _editCategory(context, ref, category: category);
-                              } else {
-                                _deleteCategory(context, ref, category);
-                              }
-                            },
-                            itemBuilder:
-                                (context) => const [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Text('编辑'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('删除'),
-                                  ),
-                                ],
-                          ),
-                  onTap:
-                      category.isDefault
-                          ? null
-                          : () =>
-                              _editCategory(context, ref, category: category),
-                ),
             ],
           ),
     );
-  }
-
-  Future<void> _editCategory(
-    BuildContext context,
-    WidgetRef ref, {
-    TaskCategory? category,
-  }) async {
-    final controller = TextEditingController(text: category?.name);
-    var color = category?.colorValue ?? AppColors.taskPalette.first.toARGB32();
-    final result = await showDialog<(String, int)>(
-      context: context,
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setState) => AlertDialog(
-                  title: Text(category == null ? '新增分类' : '编辑分类'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: controller,
-                        autofocus: true,
-                        maxLength: 20,
-                        decoration: const InputDecoration(labelText: '分类名称'),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 10,
-                        children: [
-                          for (final item in AppColors.taskPalette)
-                            InkWell(
-                              onTap:
-                                  () => setState(() => color = item.toARGB32()),
-                              customBorder: const CircleBorder(),
-                              child: CircleAvatar(
-                                radius: 17,
-                                backgroundColor: item,
-                                child:
-                                    color == item.toARGB32()
-                                        ? const Icon(Icons.check, size: 18)
-                                        : null,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('取消'),
-                    ),
-                    FilledButton(
-                      onPressed: () {
-                        final name = controller.text.trim();
-                        if (name.isNotEmpty) {
-                          Navigator.pop(context, (name, color));
-                        }
-                      },
-                      child: const Text('保存'),
-                    ),
-                  ],
-                ),
-          ),
-    );
-    controller.dispose();
-    if (result == null) return;
-    await ref
-        .read(categoryRepositoryProvider)
-        .save(id: category?.id, name: result.$1, colorValue: result.$2);
-  }
-
-  Future<void> _deleteCategory(
-    BuildContext context,
-    WidgetRef ref,
-    TaskCategory category,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('删除分类？'),
-            content: const Text('使用该分类的任务会变为未分类，任务本身不会被删除。'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('删除'),
-              ),
-            ],
-          ),
-    );
-    if (confirmed == true) {
-      await ref.read(categoryRepositoryProvider).delete(category);
-    }
   }
 }

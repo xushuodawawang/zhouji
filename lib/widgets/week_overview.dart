@@ -135,7 +135,7 @@ class WeekOverview extends StatelessWidget {
                                     (columnWidth - 3) / layout.laneCount - 1,
                                   ),
                                   height: math.max(
-                                    44,
+                                    10,
                                     TimelinePositionCalculator.heightForRange(
                                           layout.task.startMinutes,
                                           layout.task.endMinutes,
@@ -249,7 +249,7 @@ class WeekOverview extends StatelessWidget {
         final visualEnd =
             top +
             math.max(
-              44,
+              10,
               TimelinePositionCalculator.heightForRange(
                 task.startMinutes,
                 task.endMinutes,

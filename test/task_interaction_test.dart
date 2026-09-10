@@ -59,11 +59,11 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(tester.getSize(find.byKey(ValueKey(shortId))).height, 48);
-    expect(tester.getSize(find.byKey(ValueKey(adjacentShortId))).height, 48);
+    expect(tester.getSize(find.byKey(ValueKey(shortId))).height, 12);
+    expect(tester.getSize(find.byKey(ValueKey(adjacentShortId))).height, 12);
     expect(
       tester.getSize(find.byKey(ValueKey(shortId))).width,
-      lessThan(tester.getSize(find.byKey(ValueKey(normalId))).width),
+      closeTo(tester.getSize(find.byKey(ValueKey(normalId))).width, 0.01),
     );
 
     await tester.ensureVisible(find.byKey(ValueKey(normalId)));
@@ -94,6 +94,7 @@ void main() {
     await _settle(tester);
     expect(find.text('开始时间'), findsOneWidget);
     expect(find.text('结束时间'), findsOneWidget);
+    expect(find.text('任务分类'), findsNothing);
     expect(find.text('保存'), findsOneWidget);
     expect(tester.takeException(), isNull);
 

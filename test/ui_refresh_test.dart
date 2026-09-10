@@ -19,6 +19,7 @@ import 'package:zhouji/pages/month_plan_page.dart';
 import 'package:zhouji/pages/statistics_page.dart';
 import 'package:zhouji/providers/app_providers.dart';
 import 'package:zhouji/repositories/plan_task_repository.dart';
+import 'package:zhouji/utils/date_time_utils.dart';
 
 const _capture = bool.fromEnvironment('CAPTURE_UI');
 
@@ -155,6 +156,17 @@ void main() {
     await _frames(tester);
     expect(container.read(focusTimerProvider).isStopwatch, isTrue);
     expect(container.read(focusTimerProvider).title, '专业课');
+    final updatedPlans = await tester.runAsync(
+      () => PlanTaskRepository(database).getBetween(
+        DateTime.now().subtract(const Duration(days: 1)),
+        DateTime.now().add(const Duration(days: 1)),
+      ),
+    );
+    expect(updatedPlans!.single.title, '专业课');
+    expect(
+      updatedPlans.single.startMinutes,
+      lessThan(updatedPlans.single.endMinutes),
+    );
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.runAsync(() async {
@@ -214,7 +226,7 @@ void main() {
         await repository.save(
           PlanTaskDraft(
             title: ['英语阅读 · 精读训练', '高等数学 · 专项练习', '午后散步', '专业课 · 整理笔记'][i],
-            taskDate: now,
+            taskDate: AppDateUtils.startOfWeek(now),
             startMinutes: 480 + i * 90,
             endMinutes: 540 + i * 90,
             colorValue: [0xFF6B8FAD, 0xFF719B87, 0xFFC09A76, 0xFF8C86A8][i],
@@ -243,10 +255,10 @@ void main() {
     }
     await tester.tap(find.text('计划').last);
     await _frames(tester);
-    await tester.tap(find.text('月计划'));
+    await tester.tap(find.byKey(const ValueKey('plan-view-month')));
     await _frames(tester);
     await _snapshot(tester, boundary, '05-month');
-    await tester.tap(find.text('日计划'));
+    await tester.tap(find.byKey(const ValueKey('plan-view-day')));
     await _frames(tester);
     await _snapshot(tester, boundary, '06-day');
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
