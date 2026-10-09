@@ -1,5 +1,13 @@
 # 周迹 V2.6
 
+## V2.6.1 自定义头像图标（2026-10-09）
+
+- 使用用户提供的图片作为 Android 桌面图标，更新全部分辨率与自适应图标资源。
+- 图标原图保存在 `assets/branding/launcher-source.png`，可通过 `python tool/generate_icon.py` 重新导出。
+- 安装包版本为 `2.6.1+12`，支持同签名旧版本覆盖安装。
+
+[下载新版 Android 安装包](https://github.com/xushuodawawang/zhouji/releases/download/v2.6.1/zhouji-2.6.1.apk)
+
 ## V2.6 实际计时回填与个性设置（2026-10-09）
 
 - 正向计时的日程按分钟增长，暂停不增加专注时长；结束后按实际专注时长回填，不再固定为 5 分钟。
