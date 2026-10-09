@@ -490,6 +490,20 @@ class FocusPage extends ConsumerWidget {
         categoryId: task.categoryId,
         focusMinutes: task.focusMinutes ?? settings.pomodoroFocusMinutes,
       );
+    } else if (!current.isActive &&
+        !current.isBreak &&
+        current.taskId == null) {
+      final taskId = await ref
+          .read(planTaskRepositoryProvider)
+          .placeFocusTask(
+            title: current.title,
+            startedAt: DateTime.now(),
+            plannedMinutes: (current.totalSeconds / 60).ceil(),
+          );
+      controller.selectTask(
+        taskId: taskId,
+        title: current.title.isEmpty ? '自由专注' : current.title,
+      );
     }
     await controller.start();
     final scroll = ref.read(_focusScrollProvider);

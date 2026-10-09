@@ -4320,6 +4320,40 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('system'),
   );
+  static const VerificationMeta _themeColorMeta = const VerificationMeta(
+    'themeColor',
+  );
+  @override
+  late final GeneratedColumn<int> themeColor = GeneratedColumn<int>(
+    'theme_color',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0xFF17725F),
+  );
+  static const VerificationMeta _focusStatisticsDaysMeta =
+      const VerificationMeta('focusStatisticsDays');
+  @override
+  late final GeneratedColumn<int> focusStatisticsDays = GeneratedColumn<int>(
+    'focus_statistics_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _focusStatisticsStartDateMeta =
+      const VerificationMeta('focusStatisticsStartDate');
+  @override
+  late final GeneratedColumn<DateTime> focusStatisticsStartDate =
+      GeneratedColumn<DateTime>(
+        'focus_statistics_start_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _weekViewModeMeta = const VerificationMeta(
     'weekViewMode',
   );
@@ -4590,6 +4624,9 @@ class $AppSettingsTableTable extends AppSettingsTable
   List<GeneratedColumn> get $columns => [
     id,
     themeMode,
+    themeColor,
+    focusStatisticsDays,
+    focusStatisticsStartDate,
     weekViewMode,
     scheduleZoom,
     detailHourHeight,
@@ -4631,6 +4668,30 @@ class $AppSettingsTableTable extends AppSettingsTable
       context.handle(
         _themeModeMeta,
         themeMode.isAcceptableOrUnknown(data['theme_mode']!, _themeModeMeta),
+      );
+    }
+    if (data.containsKey('theme_color')) {
+      context.handle(
+        _themeColorMeta,
+        themeColor.isAcceptableOrUnknown(data['theme_color']!, _themeColorMeta),
+      );
+    }
+    if (data.containsKey('focus_statistics_days')) {
+      context.handle(
+        _focusStatisticsDaysMeta,
+        focusStatisticsDays.isAcceptableOrUnknown(
+          data['focus_statistics_days']!,
+          _focusStatisticsDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focus_statistics_start_date')) {
+      context.handle(
+        _focusStatisticsStartDateMeta,
+        focusStatisticsStartDate.isAcceptableOrUnknown(
+          data['focus_statistics_start_date']!,
+          _focusStatisticsStartDateMeta,
+        ),
       );
     }
     if (data.containsKey('week_view_mode')) {
@@ -4840,6 +4901,20 @@ class $AppSettingsTableTable extends AppSettingsTable
             DriftSqlType.string,
             data['${effectivePrefix}theme_mode'],
           )!,
+      themeColor:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}theme_color'],
+          )!,
+      focusStatisticsDays:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}focus_statistics_days'],
+          )!,
+      focusStatisticsStartDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}focus_statistics_start_date'],
+      ),
       weekViewMode:
           attachedDatabase.typeMapping.read(
             DriftSqlType.string,
@@ -4957,6 +5032,9 @@ class $AppSettingsTableTable extends AppSettingsTable
 class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final int id;
   final String themeMode;
+  final int themeColor;
+  final int focusStatisticsDays;
+  final DateTime? focusStatisticsStartDate;
   final String weekViewMode;
   final String scheduleZoom;
   final double detailHourHeight;
@@ -4981,6 +5059,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   const AppSettingsRow({
     required this.id,
     required this.themeMode,
+    required this.themeColor,
+    required this.focusStatisticsDays,
+    this.focusStatisticsStartDate,
     required this.weekViewMode,
     required this.scheduleZoom,
     required this.detailHourHeight,
@@ -5008,6 +5089,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['theme_mode'] = Variable<String>(themeMode);
+    map['theme_color'] = Variable<int>(themeColor);
+    map['focus_statistics_days'] = Variable<int>(focusStatisticsDays);
+    if (!nullToAbsent || focusStatisticsStartDate != null) {
+      map['focus_statistics_start_date'] = Variable<DateTime>(
+        focusStatisticsStartDate,
+      );
+    }
     map['week_view_mode'] = Variable<String>(weekViewMode);
     map['schedule_zoom'] = Variable<String>(scheduleZoom);
     map['detail_hour_height'] = Variable<double>(detailHourHeight);
@@ -5038,6 +5126,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return AppSettingsTableCompanion(
       id: Value(id),
       themeMode: Value(themeMode),
+      themeColor: Value(themeColor),
+      focusStatisticsDays: Value(focusStatisticsDays),
+      focusStatisticsStartDate:
+          focusStatisticsStartDate == null && nullToAbsent
+              ? const Value.absent()
+              : Value(focusStatisticsStartDate),
       weekViewMode: Value(weekViewMode),
       scheduleZoom: Value(scheduleZoom),
       detailHourHeight: Value(detailHourHeight),
@@ -5070,6 +5164,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return AppSettingsRow(
       id: serializer.fromJson<int>(json['id']),
       themeMode: serializer.fromJson<String>(json['themeMode']),
+      themeColor: serializer.fromJson<int>(json['themeColor']),
+      focusStatisticsDays: serializer.fromJson<int>(
+        json['focusStatisticsDays'],
+      ),
+      focusStatisticsStartDate: serializer.fromJson<DateTime?>(
+        json['focusStatisticsStartDate'],
+      ),
       weekViewMode: serializer.fromJson<String>(json['weekViewMode']),
       scheduleZoom: serializer.fromJson<String>(json['scheduleZoom']),
       detailHourHeight: serializer.fromJson<double>(json['detailHourHeight']),
@@ -5111,6 +5212,11 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'themeMode': serializer.toJson<String>(themeMode),
+      'themeColor': serializer.toJson<int>(themeColor),
+      'focusStatisticsDays': serializer.toJson<int>(focusStatisticsDays),
+      'focusStatisticsStartDate': serializer.toJson<DateTime?>(
+        focusStatisticsStartDate,
+      ),
       'weekViewMode': serializer.toJson<String>(weekViewMode),
       'scheduleZoom': serializer.toJson<String>(scheduleZoom),
       'detailHourHeight': serializer.toJson<double>(detailHourHeight),
@@ -5140,6 +5246,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   AppSettingsRow copyWith({
     int? id,
     String? themeMode,
+    int? themeColor,
+    int? focusStatisticsDays,
+    Value<DateTime?> focusStatisticsStartDate = const Value.absent(),
     String? weekViewMode,
     String? scheduleZoom,
     double? detailHourHeight,
@@ -5164,6 +5273,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   }) => AppSettingsRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
+    themeColor: themeColor ?? this.themeColor,
+    focusStatisticsDays: focusStatisticsDays ?? this.focusStatisticsDays,
+    focusStatisticsStartDate:
+        focusStatisticsStartDate.present
+            ? focusStatisticsStartDate.value
+            : this.focusStatisticsStartDate,
     weekViewMode: weekViewMode ?? this.weekViewMode,
     scheduleZoom: scheduleZoom ?? this.scheduleZoom,
     detailHourHeight: detailHourHeight ?? this.detailHourHeight,
@@ -5192,6 +5307,16 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return AppSettingsRow(
       id: data.id.present ? data.id.value : this.id,
       themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
+      themeColor:
+          data.themeColor.present ? data.themeColor.value : this.themeColor,
+      focusStatisticsDays:
+          data.focusStatisticsDays.present
+              ? data.focusStatisticsDays.value
+              : this.focusStatisticsDays,
+      focusStatisticsStartDate:
+          data.focusStatisticsStartDate.present
+              ? data.focusStatisticsStartDate.value
+              : this.focusStatisticsStartDate,
       weekViewMode:
           data.weekViewMode.present
               ? data.weekViewMode.value
@@ -5281,6 +5406,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return (StringBuffer('AppSettingsRow(')
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
+          ..write('themeColor: $themeColor, ')
+          ..write('focusStatisticsDays: $focusStatisticsDays, ')
+          ..write('focusStatisticsStartDate: $focusStatisticsStartDate, ')
           ..write('weekViewMode: $weekViewMode, ')
           ..write('scheduleZoom: $scheduleZoom, ')
           ..write('detailHourHeight: $detailHourHeight, ')
@@ -5310,6 +5438,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   int get hashCode => Object.hashAll([
     id,
     themeMode,
+    themeColor,
+    focusStatisticsDays,
+    focusStatisticsStartDate,
     weekViewMode,
     scheduleZoom,
     detailHourHeight,
@@ -5338,6 +5469,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       (other is AppSettingsRow &&
           other.id == this.id &&
           other.themeMode == this.themeMode &&
+          other.themeColor == this.themeColor &&
+          other.focusStatisticsDays == this.focusStatisticsDays &&
+          other.focusStatisticsStartDate == this.focusStatisticsStartDate &&
           other.weekViewMode == this.weekViewMode &&
           other.scheduleZoom == this.scheduleZoom &&
           other.detailHourHeight == this.detailHourHeight &&
@@ -5364,6 +5498,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
 class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> id;
   final Value<String> themeMode;
+  final Value<int> themeColor;
+  final Value<int> focusStatisticsDays;
+  final Value<DateTime?> focusStatisticsStartDate;
   final Value<String> weekViewMode;
   final Value<String> scheduleZoom;
   final Value<double> detailHourHeight;
@@ -5388,6 +5525,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
+    this.themeColor = const Value.absent(),
+    this.focusStatisticsDays = const Value.absent(),
+    this.focusStatisticsStartDate = const Value.absent(),
     this.weekViewMode = const Value.absent(),
     this.scheduleZoom = const Value.absent(),
     this.detailHourHeight = const Value.absent(),
@@ -5413,6 +5553,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   AppSettingsTableCompanion.insert({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
+    this.themeColor = const Value.absent(),
+    this.focusStatisticsDays = const Value.absent(),
+    this.focusStatisticsStartDate = const Value.absent(),
     this.weekViewMode = const Value.absent(),
     this.scheduleZoom = const Value.absent(),
     this.detailHourHeight = const Value.absent(),
@@ -5438,6 +5581,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   static Insertable<AppSettingsRow> custom({
     Expression<int>? id,
     Expression<String>? themeMode,
+    Expression<int>? themeColor,
+    Expression<int>? focusStatisticsDays,
+    Expression<DateTime>? focusStatisticsStartDate,
     Expression<String>? weekViewMode,
     Expression<String>? scheduleZoom,
     Expression<double>? detailHourHeight,
@@ -5463,6 +5609,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (themeMode != null) 'theme_mode': themeMode,
+      if (themeColor != null) 'theme_color': themeColor,
+      if (focusStatisticsDays != null)
+        'focus_statistics_days': focusStatisticsDays,
+      if (focusStatisticsStartDate != null)
+        'focus_statistics_start_date': focusStatisticsStartDate,
       if (weekViewMode != null) 'week_view_mode': weekViewMode,
       if (scheduleZoom != null) 'schedule_zoom': scheduleZoom,
       if (detailHourHeight != null) 'detail_hour_height': detailHourHeight,
@@ -5497,6 +5648,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   AppSettingsTableCompanion copyWith({
     Value<int>? id,
     Value<String>? themeMode,
+    Value<int>? themeColor,
+    Value<int>? focusStatisticsDays,
+    Value<DateTime?>? focusStatisticsStartDate,
     Value<String>? weekViewMode,
     Value<String>? scheduleZoom,
     Value<double>? detailHourHeight,
@@ -5522,6 +5676,10 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     return AppSettingsTableCompanion(
       id: id ?? this.id,
       themeMode: themeMode ?? this.themeMode,
+      themeColor: themeColor ?? this.themeColor,
+      focusStatisticsDays: focusStatisticsDays ?? this.focusStatisticsDays,
+      focusStatisticsStartDate:
+          focusStatisticsStartDate ?? this.focusStatisticsStartDate,
       weekViewMode: weekViewMode ?? this.weekViewMode,
       scheduleZoom: scheduleZoom ?? this.scheduleZoom,
       detailHourHeight: detailHourHeight ?? this.detailHourHeight,
@@ -5556,6 +5714,17 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     }
     if (themeMode.present) {
       map['theme_mode'] = Variable<String>(themeMode.value);
+    }
+    if (themeColor.present) {
+      map['theme_color'] = Variable<int>(themeColor.value);
+    }
+    if (focusStatisticsDays.present) {
+      map['focus_statistics_days'] = Variable<int>(focusStatisticsDays.value);
+    }
+    if (focusStatisticsStartDate.present) {
+      map['focus_statistics_start_date'] = Variable<DateTime>(
+        focusStatisticsStartDate.value,
+      );
     }
     if (weekViewMode.present) {
       map['week_view_mode'] = Variable<String>(weekViewMode.value);
@@ -5632,6 +5801,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     return (StringBuffer('AppSettingsTableCompanion(')
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
+          ..write('themeColor: $themeColor, ')
+          ..write('focusStatisticsDays: $focusStatisticsDays, ')
+          ..write('focusStatisticsStartDate: $focusStatisticsStartDate, ')
           ..write('weekViewMode: $weekViewMode, ')
           ..write('scheduleZoom: $scheduleZoom, ')
           ..write('detailHourHeight: $detailHourHeight, ')
@@ -8138,6 +8310,9 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
     AppSettingsTableCompanion Function({
       Value<int> id,
       Value<String> themeMode,
+      Value<int> themeColor,
+      Value<int> focusStatisticsDays,
+      Value<DateTime?> focusStatisticsStartDate,
       Value<String> weekViewMode,
       Value<String> scheduleZoom,
       Value<double> detailHourHeight,
@@ -8164,6 +8339,9 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
     AppSettingsTableCompanion Function({
       Value<int> id,
       Value<String> themeMode,
+      Value<int> themeColor,
+      Value<int> focusStatisticsDays,
+      Value<DateTime?> focusStatisticsStartDate,
       Value<String> weekViewMode,
       Value<String> scheduleZoom,
       Value<double> detailHourHeight,
@@ -8203,6 +8381,21 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get themeMode => $composableBuilder(
     column: $table.themeMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get themeColor => $composableBuilder(
+    column: $table.themeColor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get focusStatisticsDays => $composableBuilder(
+    column: $table.focusStatisticsDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get focusStatisticsStartDate => $composableBuilder(
+    column: $table.focusStatisticsStartDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8331,6 +8524,21 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get themeColor => $composableBuilder(
+    column: $table.themeColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get focusStatisticsDays => $composableBuilder(
+    column: $table.focusStatisticsDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get focusStatisticsStartDate => $composableBuilder(
+    column: $table.focusStatisticsStartDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get weekViewMode => $composableBuilder(
     column: $table.weekViewMode,
     builder: (column) => ColumnOrderings(column),
@@ -8451,6 +8659,21 @@ class $$AppSettingsTableTableAnnotationComposer
 
   GeneratedColumn<String> get themeMode =>
       $composableBuilder(column: $table.themeMode, builder: (column) => column);
+
+  GeneratedColumn<int> get themeColor => $composableBuilder(
+    column: $table.themeColor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get focusStatisticsDays => $composableBuilder(
+    column: $table.focusStatisticsDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get focusStatisticsStartDate => $composableBuilder(
+    column: $table.focusStatisticsStartDate,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get weekViewMode => $composableBuilder(
     column: $table.weekViewMode,
@@ -8602,6 +8825,10 @@ class $$AppSettingsTableTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
+                Value<int> themeColor = const Value.absent(),
+                Value<int> focusStatisticsDays = const Value.absent(),
+                Value<DateTime?> focusStatisticsStartDate =
+                    const Value.absent(),
                 Value<String> weekViewMode = const Value.absent(),
                 Value<String> scheduleZoom = const Value.absent(),
                 Value<double> detailHourHeight = const Value.absent(),
@@ -8626,6 +8853,9 @@ class $$AppSettingsTableTableTableManager
               }) => AppSettingsTableCompanion(
                 id: id,
                 themeMode: themeMode,
+                themeColor: themeColor,
+                focusStatisticsDays: focusStatisticsDays,
+                focusStatisticsStartDate: focusStatisticsStartDate,
                 weekViewMode: weekViewMode,
                 scheduleZoom: scheduleZoom,
                 detailHourHeight: detailHourHeight,
@@ -8652,6 +8882,10 @@ class $$AppSettingsTableTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
+                Value<int> themeColor = const Value.absent(),
+                Value<int> focusStatisticsDays = const Value.absent(),
+                Value<DateTime?> focusStatisticsStartDate =
+                    const Value.absent(),
                 Value<String> weekViewMode = const Value.absent(),
                 Value<String> scheduleZoom = const Value.absent(),
                 Value<double> detailHourHeight = const Value.absent(),
@@ -8676,6 +8910,9 @@ class $$AppSettingsTableTableTableManager
               }) => AppSettingsTableCompanion.insert(
                 id: id,
                 themeMode: themeMode,
+                themeColor: themeColor,
+                focusStatisticsDays: focusStatisticsDays,
+                focusStatisticsStartDate: focusStatisticsStartDate,
                 weekViewMode: weekViewMode,
                 scheduleZoom: scheduleZoom,
                 detailHourHeight: detailHourHeight,

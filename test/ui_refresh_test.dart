@@ -129,10 +129,8 @@ void main() {
     await _frames(tester);
     expect(container.read(focusTimerProvider).taskId, id);
     expect(container.read(focusTimerProvider).totalSeconds, 3600);
-    await tester.runAsync(
-      () => container.read(focusTimerProvider.notifier).reset(),
-    );
-    await _frames(tester);
+    final reset = container.read(focusTimerProvider.notifier).reset();
+    await _settleDatabaseOperation(tester, reset);
     expect(container.read(focusTimerProvider).isActive, isFalse);
     await tester.drag(find.byType(ListView).first, const Offset(0, 1600));
     await _frames(tester);
@@ -169,6 +167,8 @@ void main() {
       lessThan(updatedPlans.single.endMinutes),
     );
     expect(tester.takeException(), isNull);
+    final finish = container.read(focusTimerProvider.notifier).endEarly();
+    await _settleDatabaseOperation(tester, finish);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.runAsync(() async {
       container.dispose();
@@ -285,6 +285,27 @@ Future<void> _frames(WidgetTester tester) async {
   for (var i = 0; i < 20; i++) {
     await tester.pump(const Duration(milliseconds: 50));
   }
+}
+
+Future<void> _settleDatabaseOperation(
+  WidgetTester tester,
+  Future<void> operation,
+) async {
+  var done = false;
+  operation.then((_) => done = true);
+  for (var i = 0; i < 100 && !done; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
+  expect(
+    done,
+    isTrue,
+    reason:
+        'Database transaction should finish while stream notifications are pumped',
+  );
+  await operation;
 }
 
 Future<void> _snapshot(WidgetTester tester, GlobalKey key, String name) async {

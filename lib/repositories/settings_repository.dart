@@ -15,6 +15,9 @@ class SettingsRepository {
   Future<void> save(AppSettings settings) => _database.saveSettings(
     AppSettingsTableCompanion(
       themeMode: Value(settings.themeMode),
+      themeColor: Value(settings.themeColor),
+      focusStatisticsDays: Value(settings.focusStatisticsDays),
+      focusStatisticsStartDate: Value(settings.focusStatisticsStartDate),
       weekViewMode: Value(settings.weekViewMode.name),
       scheduleZoom: Value(settings.scheduleZoom.name),
       detailHourHeight: Value(settings.detailHourHeight),
@@ -40,6 +43,9 @@ class SettingsRepository {
 
   AppSettings _fromRow(AppSettingsRow row) => AppSettings(
     themeMode: row.themeMode,
+    themeColor: row.themeColor,
+    focusStatisticsDays: row.focusStatisticsDays,
+    focusStatisticsStartDate: row.focusStatisticsStartDate,
     weekViewMode: WeekViewMode.values.byName(row.weekViewMode),
     scheduleZoom: ScheduleZoom.values.byName(row.scheduleZoom),
     detailHourHeight: row.detailHourHeight,

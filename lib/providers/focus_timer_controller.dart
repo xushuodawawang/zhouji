@@ -90,6 +90,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     Future<void> Function(int taskId)? onTaskFocusCompleted,
     required AppSettings settings,
     Future<AppSettings> Function()? loadSettings,
+    DateTime Function()? now,
   }) : _repository = repository,
        _notifications = notifications,
        _music = music ?? FocusMusicService(),
@@ -97,6 +98,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
        _onTaskFocusCompleted = onTaskFocusCompleted ?? ((_) async {}),
        _settings = settings,
        _loadSettings = loadSettings,
+       _now = now ?? DateTime.now,
        super(
          FocusTimerState(
            remainingSeconds: settings.pomodoroFocusMinutes * 60,
@@ -113,6 +115,9 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
   final Future<void> Function(int taskId) _onTaskFocusCompleted;
   AppSettings _settings;
   final Future<AppSettings> Function()? _loadSettings;
+  final DateTime Function() _now;
+  Future<void>? _planSync;
+  int? _lastSyncedMinute;
   Timer? _ticker;
   bool _completing = false;
   bool _musicManuallyPaused = false;
@@ -138,7 +143,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
       );
       return;
     }
-    final remaining = remainingAt(timer, DateTime.now());
+    final remaining = remainingAt(timer, _now());
     final total = timer.totalSeconds ?? _durationFor(timer.phase) * 60;
     state = FocusTimerState(
       status:
@@ -158,6 +163,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     if (remaining <= 0 && !state.isStopwatch) {
       await _finishPhase(completed: true);
     } else if (timer.isRunning) {
+      if (state.isStopwatch) await _syncStopwatchPlan();
       _startTicker();
       if (!state.isBreak && _settings.focusMusicEnabled) {
         await _startBackgroundMusic();
@@ -245,7 +251,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     final wasPaused = state.status == FocusTimerStatus.paused;
     if (!wasPaused) _musicManuallyPaused = false;
     final operation = ++_operation;
-    final now = DateTime.now();
+    final now = _now();
     final expected =
         state.isStopwatch
             ? now.subtract(Duration(seconds: state.remainingSeconds))
@@ -256,6 +262,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
       expectedEndAt: expected,
     );
     await _persist();
+    if (state.isStopwatch) await _syncStopwatchPlan();
     if (operation != _operation || state.status != FocusTimerStatus.running) {
       return;
     }
@@ -285,19 +292,20 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     final remaining = math.max(
       0,
       state.isStopwatch
-          ? DateTime.now().difference(state.expectedEndAt!).inSeconds
-          : state.expectedEndAt!.difference(DateTime.now()).inSeconds,
+          ? _now().difference(state.expectedEndAt!).inSeconds
+          : state.expectedEndAt!.difference(_now()).inSeconds,
     );
     _ticker?.cancel();
     state = state.copyWith(
       status: FocusTimerStatus.paused,
       remainingSeconds: remaining,
-      expectedEndAt: DateTime.now().add(Duration(seconds: remaining)),
+      expectedEndAt: _now().add(Duration(seconds: remaining)),
       musicPlaying: false,
     );
     await _notifications.cancelTimer();
     await _music.pause();
     await _persist();
+    if (state.isStopwatch) await _syncStopwatchPlan();
   }
 
   Future<void> resume() => start();
@@ -317,6 +325,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
   }
 
   Future<void> reset() async {
+    if (state.isActive && !state.isBreak) await endEarly();
     _operation++;
     await _notifications.cancelTimer();
     await _music.stop();
@@ -339,10 +348,11 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
       final remaining = math.max(
         0,
         state.isStopwatch
-            ? DateTime.now().difference(end).inSeconds
-            : end.difference(DateTime.now()).inSeconds,
+            ? _now().difference(end).inSeconds
+            : end.difference(_now()).inSeconds,
       );
       state = state.copyWith(remainingSeconds: remaining);
+      if (state.isStopwatch) unawaited(_syncStopwatchPlan());
       if (remaining <= 0 && !state.isStopwatch) {
         _finishPhase(completed: true);
       }
@@ -355,6 +365,20 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     _completing = true;
     try {
       _ticker?.cancel();
+      final endedAt = _now();
+      // Recompute before asynchronous cleanup; the last UI tick may be stale.
+      if (state.status == FocusTimerStatus.running) {
+        final end = state.expectedEndAt!;
+        state = state.copyWith(
+          remainingSeconds: math.max(
+            0,
+            state.isStopwatch
+                ? endedAt.difference(end).inSeconds
+                : end.difference(endedAt).inSeconds,
+          ),
+        );
+      }
+      await _planSync;
       await _notifications.cancelTimer();
       await _music.stop();
       final wasFocus = state.phase == TimerPhase.focus;
@@ -375,8 +399,8 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
             startedAt: state.startedAt!,
             endedAt:
                 completed && !wasStopwatch && state.remainingSeconds == 0
-                    ? state.expectedEndAt ?? DateTime.now()
-                    : DateTime.now(),
+                    ? state.expectedEndAt ?? endedAt
+                    : endedAt,
             plannedMinutes: (state.totalSeconds / 60).ceil(),
             actualMinutes: math.max(1, (usedSeconds / 60).ceil()),
             mode: state.isStopwatch ? TimerMode.stopwatch : TimerMode.pomodoro,
@@ -421,6 +445,7 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
   }
 
   void _setReadyFocus() {
+    _lastSyncedMinute = null;
     _musicManuallyPaused = false;
     final seconds = _settings.pomodoroFocusMinutes * 60;
     state = FocusTimerState(
@@ -429,6 +454,36 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
       cycleCount: state.cycleCount,
       restoring: false,
     );
+  }
+
+  Future<void> _syncStopwatchPlan() async {
+    if (!state.isStopwatch ||
+        state.taskId == null ||
+        state.startedAt == null ||
+        _completing) {
+      return;
+    }
+    final minutes = math.max(1, (state.remainingSeconds / 60).ceil());
+    if (_lastSyncedMinute == minutes) return;
+    _lastSyncedMinute = minutes;
+    final taskId = state.taskId!;
+    final startedAt = state.startedAt!;
+    final previous = _planSync;
+    _planSync = () async {
+      await previous;
+      await _repository.syncTaskDuration(
+        taskId: taskId,
+        startedAt: startedAt,
+        liveMinutes: minutes,
+      );
+    }();
+    try {
+      await _planSync;
+    } catch (_) {
+      // Keep the timer running; final saving retries the same synchronization.
+      _lastSyncedMinute = null;
+      _planSync = null;
+    }
   }
 
   int _durationFor(TimerPhase phase) => switch (phase) {

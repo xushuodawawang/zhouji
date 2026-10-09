@@ -10,6 +10,8 @@ import '../utils/date_time_utils.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/focus_dashboard.dart';
 import '../widgets/timeline_settings_sheet.dart';
+import '../widgets/focus_statistics_settings.dart';
+import '../utils/app_colors.dart';
 
 class StatisticsPage extends ConsumerStatefulWidget {
   const StatisticsPage({super.key});
@@ -47,13 +49,13 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
               colors:
                   Theme.of(context).brightness == Brightness.dark
                       ? [
-                        const Color(0xFF15382E),
+                        Theme.of(context).colorScheme.primaryContainer,
                         Theme.of(context).colorScheme.surface,
                       ]
                       : [
-                        const Color(0xFFD3E8B7),
-                        const Color(0xFFECF7E1),
-                        const Color(0xFFF8FAF6),
+                        Theme.of(context).colorScheme.primaryContainer,
+                        Theme.of(context).colorScheme.surfaceContainerLow,
+                        Theme.of(context).colorScheme.surface,
                       ],
             ),
           ),
@@ -507,6 +509,37 @@ class _SettingsSheet extends ConsumerWidget {
                 },
               ),
               const SizedBox(height: 10),
+              DropdownButtonFormField<int>(
+                key: ValueKey(settings.themeColor),
+                initialValue: settings.themeColor,
+                decoration: const InputDecoration(
+                  labelText: '主题色',
+                  prefixIcon: Icon(Icons.palette_outlined),
+                ),
+                items: [
+                  for (final entry in AppColors.themePalette.entries)
+                    DropdownMenuItem(
+                      value: entry.key,
+                      child: Row(
+                        children: [
+                          Icon(Icons.circle, color: Color(entry.key), size: 18),
+                          const SizedBox(width: 12),
+                          Text(entry.value),
+                        ],
+                      ),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    ref
+                        .read(settingsRepositoryProvider)
+                        .save(settings.copyWith(themeColor: value));
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              const FocusStatisticsSettings(),
+              const SizedBox(height: 16),
               DropdownButtonFormField<WeekViewMode>(
                 initialValue: settings.weekViewMode,
                 decoration: const InputDecoration(

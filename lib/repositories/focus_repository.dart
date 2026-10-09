@@ -32,23 +32,63 @@ class FocusRepository {
     String note = '',
   }) {
     final now = DateTime.now();
-    return _database.insertFocusSession(
-      FocusSessionsCompanion.insert(
-        sessionDate: AppDateUtils.dateOnly(startedAt),
-        startedAt: startedAt,
-        endedAt: endedAt,
-        plannedMinutes: plannedMinutes,
-        actualMinutes: actualMinutes,
-        mode: mode.name,
-        completed: Value(completed),
-        taskId: Value(taskId),
-        categoryId: Value(categoryId),
-        note: Value(note),
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+    return _database.transaction(() async {
+      final id = await _database.insertFocusSession(
+        FocusSessionsCompanion.insert(
+          sessionDate: AppDateUtils.dateOnly(startedAt),
+          startedAt: startedAt,
+          endedAt: endedAt,
+          plannedMinutes: plannedMinutes,
+          actualMinutes: actualMinutes,
+          mode: mode.name,
+          completed: Value(completed),
+          taskId: Value(taskId),
+          categoryId: Value(categoryId),
+          note: Value(note),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      if (taskId != null) {
+        await syncTaskDuration(
+          taskId: taskId,
+          startedAt: startedAt,
+          liveMinutes: 0,
+        );
+      }
+      return id;
+    });
   }
+
+  /// Includes earlier sessions of the same task, without counting the live
+  /// session twice once it has been saved.
+  Future<void> syncTaskDuration({
+    required int taskId,
+    required DateTime startedAt,
+    required int liveMinutes,
+  }) => _database.transaction(() async {
+    final task =
+        await (_database.select(_database.planTasks)
+          ..where((t) => t.id.equals(taskId))).getSingleOrNull();
+    if (task == null) return;
+    String normalized(String title) =>
+        title.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    final sessions =
+        await (_database.select(_database.focusSessions)
+          ..where((s) => s.taskId.equals(taskId))).get();
+    var first = startedAt;
+    var minutes = liveMinutes;
+    for (final session in sessions) {
+      // Placing a different focus task may reuse the overlapping plan's ID.
+      if (session.note.isNotEmpty &&
+          normalized(session.note) != normalized(task.title)) {
+        continue;
+      }
+      if (session.startedAt.isBefore(first)) first = session.startedAt;
+      minutes += session.actualMinutes;
+    }
+    await _database.syncFocusTaskDuration(taskId, first, minutes);
+  });
 
   Future<ActiveTimer?> loadActiveTimer() async {
     final row = await _database.getActiveTimer();

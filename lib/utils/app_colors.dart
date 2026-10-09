@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 
 abstract final class AppColors {
   static const seed = Color(0xFF176B5B);
+  static const themePalette = <int, String>{
+    0xFF17725F: '青绿',
+    0xFF3569A8: '湖蓝',
+    0xFF7655A3: '薰衣草',
+    0xFFB44F72: '玫瑰',
+    0xFFAC6630: '琥珀',
+    0xFF526A42: '橄榄',
+  };
   static const lightBackground = Color(0xFFF4F6F2);
   static const darkBackground = Color(0xFF111C18);
 

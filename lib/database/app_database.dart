@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../utils/app_colors.dart';
+import '../utils/date_time_utils.dart';
 
 part 'app_database.g.dart';
 
@@ -128,6 +129,11 @@ class MonthlyGoals extends Table {
 class AppSettingsTable extends Table {
   IntColumn get id => integer()();
   TextColumn get themeMode => text().withDefault(const Constant('system'))();
+  IntColumn get themeColor =>
+      integer().withDefault(const Constant(0xFF17725F))();
+  IntColumn get focusStatisticsDays =>
+      integer().withDefault(const Constant(0))();
+  DateTimeColumn get focusStatisticsStartDate => dateTime().nullable()();
   TextColumn get weekViewMode => text().withDefault(const Constant('detail'))();
   TextColumn get scheduleZoom =>
       text().withDefault(const Constant('standard'))();
@@ -207,12 +213,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
+      if (from >= 2 && from < 8) {
+        await migrator.addColumn(appSettingsTable, appSettingsTable.themeColor);
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.focusStatisticsDays,
+        );
+        await migrator.addColumn(
+          appSettingsTable,
+          appSettingsTable.focusStatisticsStartDate,
+        );
+      }
       if (from < 2) {
         await migrator.createTable(taskCategories);
         await migrator.createTable(focusSessions);
@@ -508,6 +525,93 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteTask(int id) =>
       (delete(planTasks)..where((row) => row.id.equals(id))).go();
+
+  Future<void> syncFocusTaskDuration(
+    int taskId,
+    DateTime startedAt,
+    int actualMinutes,
+  ) => transaction(() async {
+    final task =
+        await (select(planTasks)
+          ..where((t) => t.id.equals(taskId))).getSingleOrNull();
+    if (task == null || task.isAllDay) return;
+    final date = AppDateUtils.dateOnly(startedAt);
+    final start = AppDateUtils.minutesSinceMidnight(startedAt);
+    final duration = actualMinutes.clamp(
+      1,
+      AppDateUtils.maximumTimelineMinutes - start,
+    );
+    final end = start + duration;
+    final absoluteStart = date.add(Duration(minutes: start));
+    final absoluteEnd = date.add(Duration(minutes: end));
+    final candidates =
+        await (select(planTasks)..where(
+          (t) =>
+              t.id.equals(taskId).not() &
+              t.isAllDay.equals(false) &
+              t.taskDate.isBiggerOrEqualValue(
+                date.subtract(const Duration(days: 1)),
+              ) &
+              t.taskDate.isSmallerOrEqualValue(
+                date.add(const Duration(days: 1)),
+              ),
+        )).get();
+    for (final other in candidates) {
+      final otherStart = other.taskDate.add(
+        Duration(minutes: other.startMinutes),
+      );
+      final otherEnd = other.taskDate.add(Duration(minutes: other.endMinutes));
+      if (!otherStart.isBefore(absoluteEnd) ||
+          !otherEnd.isAfter(absoluteStart)) {
+        continue;
+      }
+      // Preserve the portions of neighbouring plans outside actual focus time.
+      final leftEnd = absoluteStart.difference(other.taskDate).inMinutes;
+      final rightStart = absoluteEnd.difference(other.taskDate).inMinutes;
+      final hasLeft = leftEnd > other.startMinutes;
+      final hasRight = rightStart < other.endMinutes;
+      if (hasLeft) {
+        await (update(planTasks)..where((t) => t.id.equals(other.id))).write(
+          PlanTasksCompanion(
+            endMinutes: Value(leftEnd),
+            plannedDurationMinutes: Value(leftEnd - other.startMinutes),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+        if (hasRight) {
+          await into(planTasks).insert(
+            other
+                .toCompanion(false)
+                .copyWith(
+                  id: const Value.absent(),
+                  startMinutes: Value(rightStart),
+                  plannedDurationMinutes: Value(other.endMinutes - rightStart),
+                  updatedAt: Value(DateTime.now()),
+                ),
+          );
+        }
+      } else if (hasRight) {
+        await (update(planTasks)..where((t) => t.id.equals(other.id))).write(
+          PlanTasksCompanion(
+            startMinutes: Value(rightStart),
+            plannedDurationMinutes: Value(other.endMinutes - rightStart),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+      } else {
+        await deleteTask(other.id);
+      }
+    }
+    await (update(planTasks)..where((t) => t.id.equals(taskId))).write(
+      PlanTasksCompanion(
+        taskDate: Value(date),
+        startMinutes: Value(start),
+        endMinutes: Value(end),
+        plannedDurationMinutes: Value(actualMinutes > 0 ? actualMinutes : 1),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  });
 
   Stream<List<ActivityRecordRow>> watchRecordsForDate(DateTime date) {
     final query =

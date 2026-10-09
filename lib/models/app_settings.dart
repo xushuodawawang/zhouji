@@ -5,6 +5,9 @@ enum ScheduleZoom { compact, standard, spacious }
 class AppSettings {
   const AppSettings({
     this.themeMode = 'system',
+    this.themeColor = 0xFF17725F,
+    this.focusStatisticsDays = 0,
+    this.focusStatisticsStartDate,
     this.weekViewMode = WeekViewMode.detail,
     this.scheduleZoom = ScheduleZoom.standard,
     this.detailHourHeight = 56,
@@ -28,6 +31,11 @@ class AppSettings {
   });
 
   final String themeMode;
+  final int themeColor;
+
+  /// Zero includes all history; a positive value includes that many days.
+  final int focusStatisticsDays;
+  final DateTime? focusStatisticsStartDate;
   final WeekViewMode weekViewMode;
   final ScheduleZoom scheduleZoom;
   final double detailHourHeight;
@@ -51,6 +59,10 @@ class AppSettings {
 
   AppSettings copyWith({
     String? themeMode,
+    int? themeColor,
+    int? focusStatisticsDays,
+    DateTime? focusStatisticsStartDate,
+    bool clearFocusStatisticsStartDate = false,
     WeekViewMode? weekViewMode,
     ScheduleZoom? scheduleZoom,
     double? detailHourHeight,
@@ -73,6 +85,12 @@ class AppSettings {
     double? taskCardOpacity,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
+    themeColor: themeColor ?? this.themeColor,
+    focusStatisticsDays: focusStatisticsDays ?? this.focusStatisticsDays,
+    focusStatisticsStartDate:
+        clearFocusStatisticsStartDate
+            ? null
+            : focusStatisticsStartDate ?? this.focusStatisticsStartDate,
     weekViewMode: weekViewMode ?? this.weekViewMode,
     scheduleZoom: scheduleZoom ?? this.scheduleZoom,
     detailHourHeight: detailHourHeight ?? this.detailHourHeight,

@@ -92,13 +92,10 @@ class PlanTaskRepository {
     final normalizedTitle = title.trim().isEmpty ? '自由专注' : title.trim();
     final date = AppDateUtils.dateOnly(startedAt);
     final start = AppDateUtils.minutesSinceMidnight(startedAt);
-    final duration = plannedMinutes > 0 ? plannedMinutes : 15;
+    final duration = plannedMinutes > 0 ? plannedMinutes : 1;
     final end =
         (start + duration)
-            .clamp(
-              start + AppDateUtils.manualMinimumMinutes,
-              AppDateUtils.maximumTimelineMinutes,
-            )
+            .clamp(start + 1, AppDateUtils.maximumTimelineMinutes)
             .toInt();
     final now = DateTime.now();
     final color = AppColors.automaticTaskColor(normalizedTitle);

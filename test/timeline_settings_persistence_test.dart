@@ -20,7 +20,10 @@ void main() {
 
     var database = AppDatabase.forTesting(NativeDatabase(file));
     await SettingsRepository(database).save(
-      const AppSettings(
+      AppSettings(
+        themeColor: 0xFF3569A8,
+        focusStatisticsDays: 30,
+        focusStatisticsStartDate: DateTime(2026, 10, 1),
         detailHourHeight: 72,
         overviewHourHeight: 32,
         taskCardOpacity: 0.45,
@@ -38,6 +41,19 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase(file));
     final restored = await SettingsRepository(database).get();
     expect(restored.detailHourHeight, 72);
+    expect(restored.themeColor, 0xFF3569A8);
+    expect(restored.focusStatisticsDays, 30);
+    expect(restored.focusStatisticsStartDate, DateTime(2026, 10, 1));
+    await SettingsRepository(database).save(
+      restored.copyWith(
+        focusStatisticsDays: 7,
+        clearFocusStatisticsStartDate: true,
+      ),
+    );
+    expect(
+      (await SettingsRepository(database).get()).focusStatisticsStartDate,
+      isNull,
+    );
     expect(restored.overviewHourHeight, 32);
     expect(restored.taskCardOpacity, 0.45);
     expect(restored.focusLockEnabled, isTrue);

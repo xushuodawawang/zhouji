@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'pages/home_shell.dart';
 import 'providers/app_providers.dart';
-import 'utils/app_colors.dart';
 
 class ZhoujiApp extends ConsumerWidget {
   const ZhoujiApp({super.key});
@@ -13,6 +12,11 @@ class ZhoujiApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(
       appSettingsProvider.select((value) => value.valueOrNull?.themeMode),
+    );
+    final seed = ref.watch(
+      appSettingsProvider.select(
+        (value) => value.valueOrNull?.themeColor ?? 0xFF17725F,
+      ),
     );
     return MaterialApp(
       title: '周迹',
@@ -30,29 +34,21 @@ class ZhoujiApp extends ConsumerWidget {
         'dark' => ThemeMode.dark,
         _ => ThemeMode.system,
       },
-      theme: _lightTheme,
-      darkTheme: _darkTheme,
+      theme: _theme(Brightness.light, seed),
+      darkTheme: _theme(Brightness.dark, seed),
       home: const HomeShell(),
     );
   }
 
-  static final _lightTheme = _buildTheme(Brightness.light);
-  static final _darkTheme = _buildTheme(Brightness.dark);
+  static final _themes = <(Brightness, int), ThemeData>{};
+  static ThemeData _theme(Brightness brightness, int seed) => _themes
+      .putIfAbsent((brightness, seed), () => _buildTheme(brightness, seed));
 
-  static ThemeData _buildTheme(Brightness brightness) {
+  static ThemeData _buildTheme(Brightness brightness, int seed) {
     final dark = brightness == Brightness.dark;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.seed,
+      seedColor: Color(seed),
       brightness: brightness,
-      surface:
-          brightness == Brightness.light
-              ? AppColors.lightBackground
-              : AppColors.darkBackground,
-    ).copyWith(
-      primaryContainer:
-          dark ? const Color(0xFF264F40) : const Color(0xFFDDEEE5),
-      onPrimaryContainer:
-          dark ? const Color(0xFFCCE8D8) : const Color(0xFF154F41),
     );
     final rounded = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(14),
@@ -66,7 +62,7 @@ class ZhoujiApp extends ConsumerWidget {
       navigationBarTheme: NavigationBarThemeData(
         height: 70,
         elevation: 0,
-        backgroundColor: dark ? const Color(0xFF182420) : Colors.white,
+        backgroundColor: dark ? colorScheme.surfaceContainerLow : Colors.white,
         indicatorColor: colorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
@@ -129,7 +125,7 @@ class ZhoujiApp extends ConsumerWidget {
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
-        color: dark ? const Color(0xFF1C2A25) : Colors.white,
+        color: dark ? colorScheme.surfaceContainer : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: colorScheme.outlineVariant.withAlpha(70)),

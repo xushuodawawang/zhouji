@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/focus_session.dart';
 import '../providers/app_providers.dart';
+import '../models/app_settings.dart';
+import '../services/cumulative_focus_statistics.dart';
+import 'focus_statistics_settings.dart';
 import '../utils/app_colors.dart';
 import '../utils/date_time_utils.dart';
 
@@ -16,10 +19,12 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
   DateTime _day = AppDateUtils.dateOnly(DateTime.now());
   int _range = 0;
   DateTimeRange? _custom;
-  static const _green = Color(0xFF17725F);
+  Color get _accent => Theme.of(context).colorScheme.primary;
 
   @override
   Widget build(BuildContext context) {
+    final settings =
+        ref.watch(appSettingsProvider).valueOrNull ?? const AppSettings();
     return ref
         .watch(allFocusSessionsProvider)
         .when(
@@ -31,14 +36,11 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
               ),
           data: (sessions) {
             final now = AppDateUtils.dateOnly(DateTime.now());
-            final total = sessions.fold(0, (sum, s) => sum + s.actualMinutes);
-            final first =
-                sessions.isEmpty
-                    ? now
-                    : sessions
-                        .map((s) => s.sessionDate)
-                        .reduce((a, b) => a.isBefore(b) ? a : b);
-            final days = math.max(1, now.difference(first).inDays + 1);
+            final cumulative = CumulativeFocusStatistics(
+              sessions,
+              settings,
+              now,
+            );
             final daily =
                 sessions
                     .where((s) => AppDateUtils.isSameDate(s.sessionDate, _day))
@@ -112,20 +114,46 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
                     children: [
                       Row(
                         children: [
-                          _metric('次数', '${sessions.length}'),
-                          _metric('时长', AppDateUtils.formatDuration(total)),
+                          _metric('次数', '${cumulative.count}'),
+                          _metric(
+                            '时长',
+                            AppDateUtils.formatDuration(cumulative.minutes),
+                          ),
                           _metric(
                             '日均时长',
-                            AppDateUtils.formatDuration((total / days).round()),
+                            AppDateUtils.formatDuration(
+                              cumulative.dailyAverageMinutes,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '日均按首次专注至今天的自然日计算',
+                        '${_date(cumulative.start)} 至今天 · 日均按 ${cumulative.days} 个自然日计算',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
+                  ),
+                  trailing: IconButton(
+                    tooltip: '累计专注统计范围',
+                    icon: const Icon(Icons.tune),
+                    onPressed:
+                        () => showModalBottomSheet<void>(
+                          context: context,
+                          showDragHandle: true,
+                          useSafeArea: true,
+                          isScrollControlled: true,
+                          builder:
+                              (context) => Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  20,
+                                  0,
+                                  20,
+                                  24 + MediaQuery.viewInsetsOf(context).bottom,
+                                ),
+                                child: const FocusStatisticsSettings(),
+                              ),
+                        ),
                   ),
                 ),
                 _panel(
@@ -288,6 +316,7 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
                           painter: _HourBars(
                             hours,
                             Theme.of(context).colorScheme.onSurfaceVariant,
+                            _accent,
                           ),
                         ),
                       ),
@@ -305,14 +334,14 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         children: [
-          Text(label, style: const TextStyle(color: _green, fontSize: 13)),
+          Text(label, style: TextStyle(color: _accent, fontSize: 13)),
           const SizedBox(height: 9),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               value,
-              style: const TextStyle(
-                color: _green,
+              style: TextStyle(
+                color: _accent,
                 fontSize: 27,
                 fontWeight: FontWeight.w500,
               ),
@@ -336,8 +365,8 @@ class _FocusDashboardState extends ConsumerState<FocusDashboard> {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
-                      color: _green,
+                    style: TextStyle(
+                      color: _accent,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -424,9 +453,10 @@ class _FocusRing extends CustomPainter {
 }
 
 class _HourBars extends CustomPainter {
-  _HourBars(this.hours, this.labelColor);
+  _HourBars(this.hours, this.labelColor, this.color);
   final List<double> hours;
   final Color labelColor;
+  final Color color;
   @override
   void paint(Canvas canvas, Size size) {
     final maxValue = math.max(1.0, hours.reduce(math.max));
@@ -443,7 +473,7 @@ class _HourBars extends CustomPainter {
           ),
           const Radius.circular(2),
         ),
-        Paint()..color = const Color(0xFF188C78),
+        Paint()..color = color,
       );
       if (i % 6 == 0 || i == 23) {
         final text = TextPainter(
@@ -466,5 +496,5 @@ class _HourBars extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _HourBars old) =>
-      old.hours != hours || old.labelColor != labelColor;
+      old.hours != hours || old.labelColor != labelColor || old.color != color;
 }
